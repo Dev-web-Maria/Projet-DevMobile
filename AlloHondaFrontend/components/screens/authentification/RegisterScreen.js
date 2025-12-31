@@ -126,7 +126,7 @@ export default function RegisterScreen({ navigation }) {
       navigation.reset({
         index: 0,
         routes: [{ 
-          name: 'ClientHomepage', 
+          name: 'Client', 
           params: { 
             user: userData,
             title: `Bonjour ${userData.prenom || ''}`
@@ -138,7 +138,7 @@ export default function RegisterScreen({ navigation }) {
       navigation.reset({
         index: 0,
         routes: [{ 
-          name: 'ChauffeurDashboard', 
+          name: 'Driver', 
           params: { 
             user: userData,
             title: `Tableau de Bord - ${userData.prenom || ''}`
