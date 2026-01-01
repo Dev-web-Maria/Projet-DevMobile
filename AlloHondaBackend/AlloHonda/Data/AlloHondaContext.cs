@@ -1,12 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using AlloHanda.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using AlloHonda.Models;
 using Microsoft.AspNetCore.Identity;
+using AlloHonda.Models;
 
 namespace AlloHonda.Data
 {
-    public class AlloHondaContext : IdentityDbContext<ApplicationUser, IdentityRole, string>
+    public class AlloHondaContext
+        : IdentityDbContext<ApplicationUser, IdentityRole, string>
     {
         public AlloHondaContext(DbContextOptions<AlloHondaContext> options)
             : base(options)
@@ -23,18 +23,45 @@ namespace AlloHonda.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configuration de la relation Client - ApplicationUser
+            // Client <-> ApplicationUser
             modelBuilder.Entity<Client>()
                 .HasOne(c => c.ApplicationUser)
                 .WithOne(u => u.Client)
                 .HasForeignKey<Client>(c => c.ApplicationUserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Configuration de la relation Chauffeur - ApplicationUser
+            // Chauffeur <-> ApplicationUser
             modelBuilder.Entity<Chauffeur>()
                 .HasOne(c => c.ApplicationUser)
                 .WithOne(u => u.Chauffeur)
                 .HasForeignKey<Chauffeur>(c => c.ApplicationUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configuration pour DemandeTransport
+            modelBuilder.Entity<DemandeTransport>(entity =>
+            {
+                entity.HasOne(d => d.Client)
+                    .WithMany(c => c.Demandes)
+                    .HasForeignKey(d => d.ClientId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.Chauffeur)
+                    .WithMany(c => c.DemandesAcceptees)
+                    .HasForeignKey(d => d.ChauffeurId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired(false);
+
+                entity.HasOne(d => d.Trajet)
+                    .WithOne(t => t.DemandeTransport)
+                    .HasForeignKey<Trajet>(t => t.DemandeTransportId)
+                    .IsRequired(false);
+            });
+
+            // Vehicule <-> Chauffeur
+            modelBuilder.Entity<Vehicule>()
+                .HasOne(v => v.Chauffeur)
+                .WithOne(c => c.Vehicule)
+                .HasForeignKey<Vehicule>(v => v.ChauffeurId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

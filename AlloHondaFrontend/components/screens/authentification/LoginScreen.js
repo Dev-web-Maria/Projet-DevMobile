@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -30,14 +31,14 @@ export default function LoginScreen({ navigation }) {
   const navigateToUserDashboard = (userData, userType) => {
     console.log('🚀 Navigation après login, userType:', userType);
     console.log('📦 Données utilisateur:', userData);
-    
+
     if (userType === 'client') {
       // Naviguer vers la page d'accueil client
       navigation.reset({
         index: 0,
-        routes: [{ 
-          name: 'Client', 
-          params: { 
+        routes: [{
+          name: 'Client',
+          params: {
             user: userData,
           }
         }],
@@ -46,9 +47,9 @@ export default function LoginScreen({ navigation }) {
       // Naviguer vers le tableau de bord chauffeur
       navigation.reset({
         index: 0,
-        routes: [{ 
-          name: 'Driver', 
-          params: { 
+        routes: [{
+          name: 'Driver',
+          params: {
             user: userData,
           }
         }],
@@ -61,20 +62,20 @@ export default function LoginScreen({ navigation }) {
       setConnectionStatus('Test en cours...');
       const testUrl = getApiBaseUrl();
       console.log('🔍 Test de connexion à:', testUrl);
-      
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
-      
-      const response = await fetch(testUrl, { 
+
+      const response = await fetch(testUrl, {
         method: 'GET',
         signal: controller.signal,
         headers: {
           'Accept': 'application/json',
         }
       });
-      
+
       clearTimeout(timeoutId);
-      
+
       console.log('✅ Test réussi - Statut:', response.status);
       setConnectionStatus('Connecté ✓');
       return true;
@@ -101,7 +102,7 @@ export default function LoginScreen({ navigation }) {
 
     // Test de connexion au serveur
     const isConnected = await testServerConnection();
-    
+
     if (!isConnected) {
       Alert.alert(
         '❌ Erreur de connexion',
@@ -115,7 +116,7 @@ export default function LoginScreen({ navigation }) {
     try {
       const API_URL = `${getApiBaseUrl()}/api/Auth/Login`;
       console.log('📡 Connexion à:', API_URL);
-      
+
       const loginData = {
         email: email.trim(),
         password: password
@@ -154,28 +155,39 @@ export default function LoginScreen({ navigation }) {
         // Vérifier le type d'utilisateur dans la réponse
         const userType = data.userType || data.user?.roles?.[0]?.toLowerCase();
         const userData = data.user || data;
-        
+
         console.log('✅ Connexion réussie, userType:', userType);
-        
-        Alert.alert(
-          '✅ Connexion réussie',
-          `Bienvenue ${userData.prenom || ''} !`,
-          [
-            {
-              text: 'Continuer',
-              onPress: () => navigateToUserDashboard(userData, userType)
-            }
-          ]
-        );
+        console.log('✅ Connexion réussie, userData:', userType);
+
+        const combinedData = { ...userData, userType };
+
+        AsyncStorage.setItem('@user_data', JSON.stringify(combinedData))
+          .then(() => {
+            Alert.alert(
+              '✅ Connexion réussie',
+              `Bienvenue ${userData.prenom || ''} !`,
+              [
+                {
+                  text: 'Continuer',
+                  onPress: () => navigateToUserDashboard(userData, userType)
+                }
+              ]
+            );
+          })
+          .catch(err => {
+            console.error('Erreur sauvegarde session:', err);
+            // On continue quand même la navigation si la sauvegarde échoue
+            navigateToUserDashboard(userData, userType);
+          });
       } else {
         const errorMessage = data.message || data.error || `Erreur HTTP ${response.status}`;
         throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('❌ Erreur lors de la connexion:', error);
-      
+
       let errorMessage = 'Une erreur est survenue lors de la connexion';
-      
+
       if (error.name === 'AbortError') {
         errorMessage = '⏱️ Le serveur ne répond pas (timeout 30s)';
       } else if (error.message.includes('Network') || error.message.includes('fetch')) {
@@ -183,7 +195,7 @@ export default function LoginScreen({ navigation }) {
       } else {
         errorMessage = error.message;
       }
-      
+
       Alert.alert('Erreur de connexion', errorMessage);
     } finally {
       setLoading(false);
@@ -223,17 +235,17 @@ Si l'API ne répond pas:
             <MaterialCommunityIcons name="truck-fast" size={60} color="#1A56DB" />
             <Text style={styles.title}>ALLOHONDA</Text>
             <Text style={styles.subtitle}>Connectez-vous à votre compte</Text>
-            
+
             Indicateur de connexion
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.connectionStatus}
               onPress={showConnectionHelp}
             >
               <View style={styles.statusRow}>
-                <Ionicons 
-                  name={connectionStatus.includes('Connecté') ? "checkmark-circle" : "alert-circle"} 
-                  size={16} 
-                  color={connectionStatus.includes('Connecté') ? "#10B981" : "#EF4444"} 
+                <Ionicons
+                  name={connectionStatus.includes('Connecté') ? "checkmark-circle" : "alert-circle"}
+                  size={16}
+                  color={connectionStatus.includes('Connecté') ? "#10B981" : "#EF4444"}
                 />
                 <Text style={[
                   styles.statusText,
@@ -282,7 +294,7 @@ Si l'API ne répond pas:
                   secureTextEntry={!showPassword}
                   editable={!loading}
                 />
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => setShowPassword(!showPassword)}
                   disabled={loading}
                 >
@@ -300,14 +312,14 @@ Si l'API ne répond pas:
             </TouchableOpacity>
 
             {/* Bouton TEST API */}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.testButton}
               onPress={async () => {
                 setLoading(true);
                 const isConnected = await testServerConnection();
                 Alert.alert(
                   isConnected ? '✅ Connexion réussie' : '❌ Échec de connexion',
-                  isConnected 
+                  isConnected
                     ? `Le serveur API est accessible!\n\nURL: ${getApiBaseUrl()}`
                     : `Impossible de joindre le serveur.\n\nURL: ${getApiBaseUrl()}\n\nVérifiez que l'API .NET est démarrée.`
                 );
@@ -322,8 +334,8 @@ Si l'API ne répond pas:
             </TouchableOpacity>
 
             {/* Bouton de connexion */}
-            <TouchableOpacity 
-              style={[styles.loginButton, loading && styles.loginButtonDisabled]} 
+            <TouchableOpacity
+              style={[styles.loginButton, loading && styles.loginButtonDisabled]}
               onPress={handleLogin}
               disabled={loading}
             >

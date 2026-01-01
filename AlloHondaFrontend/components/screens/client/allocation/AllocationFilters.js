@@ -1,13 +1,13 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
-const filters = [
-  { key: "ALL", label: "Tous", count: "24" },
-  { key: "AVAILABLE", label: "Disponibles", count: "12" },
-  { key: "MAINTENANCE", label: "Maintenance", count: "5" },
-];
+const AllocationFilters = ({ selected, onChange, counts = {} }) => {
+  const filters = [
+    { key: "ALL", label: "Tous", count: counts.all || "0" },
+    { key: "Disponible", label: "Disponibles", count: counts.disponible || "0" },
+    { key: "Occupe", label: "Occupés", count: counts.occupe || "0" },
+  ];
 
-const AllocationFilters = ({ selected, onChange }) => {
   return (
     <View style={styles.container}>
       <View style={styles.filtersWrapper}>
@@ -49,8 +49,6 @@ const AllocationFilters = ({ selected, onChange }) => {
     </View>
   );
 };
-
-export default AllocationFilters;
 
 const styles = StyleSheet.create({
   container: {
@@ -128,3 +126,5 @@ const styles = StyleSheet.create({
     borderRadius: 1.5,
   },
 });
+
+export default AllocationFilters;

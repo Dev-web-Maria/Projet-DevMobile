@@ -22,150 +22,6 @@ namespace AlloHonda.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("AlloHanda.Models.Chauffeur", b =>
-                {
-                    b.Property<int>("IdChauffeur")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdChauffeur"));
-
-                    b.Property<string>("ApplicationUserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Statut")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("IdChauffeur");
-
-                    b.HasIndex("ApplicationUserId")
-                        .IsUnique();
-
-                    b.ToTable("Chauffeur");
-                });
-
-            modelBuilder.Entity("AlloHanda.Models.Client", b =>
-                {
-                    b.Property<int>("IdClient")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdClient"));
-
-                    b.Property<string>("ApplicationUserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("IdClient");
-
-                    b.HasIndex("ApplicationUserId")
-                        .IsUnique();
-
-                    b.ToTable("Client");
-                });
-
-            modelBuilder.Entity("AlloHanda.Models.DemandeTransport", b =>
-                {
-                    b.Property<int>("IdDemande")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdDemande"));
-
-                    b.Property<int?>("ChauffeurId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ClientId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("DescriptionMarchandise")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<double>("Poids")
-                        .HasColumnType("float");
-
-                    b.Property<double>("PrixEstime")
-                        .HasColumnType("float");
-
-                    b.Property<string>("Statut")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("IdDemande");
-
-                    b.HasIndex("ChauffeurId");
-
-                    b.HasIndex("ClientId");
-
-                    b.ToTable("DemandeTransport");
-                });
-
-            modelBuilder.Entity("AlloHanda.Models.Trajet", b =>
-                {
-                    b.Property<int>("IdTrajet")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdTrajet"));
-
-                    b.Property<string>("AdresseArrivee")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AdresseDepart")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("DemandeTransportId")
-                        .HasColumnType("int");
-
-                    b.Property<double>("Distance")
-                        .HasColumnType("float");
-
-                    b.Property<double>("DureeEstimee")
-                        .HasColumnType("float");
-
-                    b.HasKey("IdTrajet");
-
-                    b.HasIndex("DemandeTransportId")
-                        .IsUnique();
-
-                    b.ToTable("Trajet");
-                });
-
-            modelBuilder.Entity("AlloHanda.Models.Vehicule", b =>
-                {
-                    b.Property<int>("IdVehicule")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdVehicule"));
-
-                    b.Property<double>("Capacite")
-                        .HasColumnType("float");
-
-                    b.Property<int>("ChauffeurId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Immatriculation")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("IdVehicule");
-
-                    b.HasIndex("ChauffeurId")
-                        .IsUnique();
-
-                    b.ToTable("Vehicule");
-                });
-
             modelBuilder.Entity("AlloHonda.Models.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -255,6 +111,264 @@ namespace AlloHonda.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("AlloHonda.Models.Chauffeur", b =>
+                {
+                    b.Property<int>("IdChauffeur")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdChauffeur"));
+
+                    b.Property<string>("ApplicationUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("DateExpirationPermis")
+                        .HasColumnType("datetime2");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
+
+                    b.Property<string>("NumeroPermis")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Statut")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("IdChauffeur");
+
+                    b.HasIndex("ApplicationUserId")
+                        .IsUnique();
+
+                    b.ToTable("Chauffeur");
+                });
+
+            modelBuilder.Entity("AlloHonda.Models.Client", b =>
+                {
+                    b.Property<int>("IdClient")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdClient"));
+
+                    b.Property<string>("ApplicationUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("IdClient");
+
+                    b.HasIndex("ApplicationUserId")
+                        .IsUnique();
+
+                    b.ToTable("Client");
+                });
+
+            modelBuilder.Entity("AlloHonda.Models.DemandeTransport", b =>
+                {
+                    b.Property<int>("IdDemande")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdDemande"));
+
+                    b.Property<string>("Arrivee")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ChauffeurId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("DateDepart")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Depart")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DescriptionMarchandise")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("HeureDepart")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Instructions")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("Poids")
+                        .HasColumnType("float");
+
+                    b.Property<double>("PrixEstime")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Statut")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TypeMarchandise")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("Volume")
+                        .HasColumnType("float");
+
+                    b.HasKey("IdDemande");
+
+                    b.HasIndex("ChauffeurId");
+
+                    b.HasIndex("ClientId");
+
+                    b.ToTable("DemandeTransport");
+                });
+
+            modelBuilder.Entity("AlloHonda.Models.Trajet", b =>
+                {
+                    b.Property<int>("IdTrajet")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdTrajet"));
+
+                    b.Property<string>("AdresseArrivee")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("AdresseDepart")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("DemandeTransportId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("Distance")
+                        .HasColumnType("float");
+
+                    b.Property<double>("DureeEstimee")
+                        .HasColumnType("float");
+
+                    b.HasKey("IdTrajet");
+
+                    b.HasIndex("DemandeTransportId")
+                        .IsUnique();
+
+                    b.ToTable("Trajet");
+                });
+
+            modelBuilder.Entity("AlloHonda.Models.Vehicule", b =>
+                {
+                    b.Property<int>("IdVehicule")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdVehicule"));
+
+                    b.Property<int?>("Annee")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("Autonomie")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<double>("Capacite")
+                        .HasColumnType("float");
+
+                    b.Property<int?>("ChauffeurId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("ConsommationMoyenne")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("Couleur")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("DateAssuranceExpire")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateCreation")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateDerniereRevision")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateProchaineRevision")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ImageBase64")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Immatriculation")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("Kilometrage")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Marque")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Modele")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NumeroChassis")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Observations")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Statut")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("TypeEnergie")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("IdVehicule");
+
+                    b.HasIndex("ChauffeurId")
+                        .IsUnique()
+                        .HasFilter("[ChauffeurId] IS NOT NULL");
+
+                    b.ToTable("Vehicule");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -390,38 +504,39 @@ namespace AlloHonda.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.Chauffeur", b =>
+            modelBuilder.Entity("AlloHonda.Models.Chauffeur", b =>
                 {
                     b.HasOne("AlloHonda.Models.ApplicationUser", "ApplicationUser")
                         .WithOne("Chauffeur")
-                        .HasForeignKey("AlloHanda.Models.Chauffeur", "ApplicationUserId")
+                        .HasForeignKey("AlloHonda.Models.Chauffeur", "ApplicationUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ApplicationUser");
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.Client", b =>
+            modelBuilder.Entity("AlloHonda.Models.Client", b =>
                 {
                     b.HasOne("AlloHonda.Models.ApplicationUser", "ApplicationUser")
                         .WithOne("Client")
-                        .HasForeignKey("AlloHanda.Models.Client", "ApplicationUserId")
+                        .HasForeignKey("AlloHonda.Models.Client", "ApplicationUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ApplicationUser");
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.DemandeTransport", b =>
+            modelBuilder.Entity("AlloHonda.Models.DemandeTransport", b =>
                 {
-                    b.HasOne("AlloHanda.Models.Chauffeur", "Chauffeur")
+                    b.HasOne("AlloHonda.Models.Chauffeur", "Chauffeur")
                         .WithMany("DemandesAcceptees")
-                        .HasForeignKey("ChauffeurId");
+                        .HasForeignKey("ChauffeurId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("AlloHanda.Models.Client", "Client")
+                    b.HasOne("AlloHonda.Models.Client", "Client")
                         .WithMany("Demandes")
                         .HasForeignKey("ClientId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Chauffeur");
@@ -429,24 +544,21 @@ namespace AlloHonda.Migrations
                     b.Navigation("Client");
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.Trajet", b =>
+            modelBuilder.Entity("AlloHonda.Models.Trajet", b =>
                 {
-                    b.HasOne("AlloHanda.Models.DemandeTransport", "DemandeTransport")
+                    b.HasOne("AlloHonda.Models.DemandeTransport", "DemandeTransport")
                         .WithOne("Trajet")
-                        .HasForeignKey("AlloHanda.Models.Trajet", "DemandeTransportId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("AlloHonda.Models.Trajet", "DemandeTransportId");
 
                     b.Navigation("DemandeTransport");
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.Vehicule", b =>
+            modelBuilder.Entity("AlloHonda.Models.Vehicule", b =>
                 {
-                    b.HasOne("AlloHanda.Models.Chauffeur", "Chauffeur")
+                    b.HasOne("AlloHonda.Models.Chauffeur", "Chauffeur")
                         .WithOne("Vehicule")
-                        .HasForeignKey("AlloHanda.Models.Vehicule", "ChauffeurId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("AlloHonda.Models.Vehicule", "ChauffeurId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Chauffeur");
                 });
@@ -502,7 +614,16 @@ namespace AlloHonda.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.Chauffeur", b =>
+            modelBuilder.Entity("AlloHonda.Models.ApplicationUser", b =>
+                {
+                    b.Navigation("Chauffeur")
+                        .IsRequired();
+
+                    b.Navigation("Client")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("AlloHonda.Models.Chauffeur", b =>
                 {
                     b.Navigation("DemandesAcceptees");
 
@@ -510,23 +631,14 @@ namespace AlloHonda.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.Client", b =>
+            modelBuilder.Entity("AlloHonda.Models.Client", b =>
                 {
                     b.Navigation("Demandes");
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.DemandeTransport", b =>
+            modelBuilder.Entity("AlloHonda.Models.DemandeTransport", b =>
                 {
                     b.Navigation("Trajet")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("AlloHonda.Models.ApplicationUser", b =>
-                {
-                    b.Navigation("Chauffeur")
-                        .IsRequired();
-
-                    b.Navigation("Client")
                         .IsRequired();
                 });
 #pragma warning restore 612, 618

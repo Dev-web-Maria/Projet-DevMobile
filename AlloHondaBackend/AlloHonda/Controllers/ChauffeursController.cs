@@ -1,10 +1,10 @@
-﻿// ChauffeurController.cs
+// ChauffeurController.cs
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using AlloHonda.Data;
-using AlloHanda.Models;
-using Microsoft.AspNetCore.Authorization;
 using AlloHonda.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 namespace AlloHonda.Controllers
 {
@@ -22,6 +22,158 @@ namespace AlloHonda.Controllers
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
+        }
+
+        // GET: api/Chauffeur/Available
+        [HttpGet]
+        [Route("api/Chauffeur")]
+        public async Task<IActionResult> GetAvailable()
+        {
+            try
+            {
+                var availableChauffeurs = await _context.Chauffeur
+                    .Include(c => c.ApplicationUser)
+                    .Include(c => c.Vehicule)
+                    .Where(c => c.Statut == "Disponible" || c.Statut == "Occupe") // Filtrer par statut
+                    .Select(c => new
+                    {
+                        c.IdChauffeur,
+                        Nom = c.ApplicationUser.Nom,
+                        Prenom = c.ApplicationUser.Prenom,
+                        Email = c.ApplicationUser.Email,
+                        Telephone = c.ApplicationUser.PhoneNumber ?? c.ApplicationUser.Telephone,
+                        c.Statut,
+                        NumeroPermis = c.NumeroPermis,
+                        Vehicule = c.Vehicule != null ? new
+                        {
+                            c.Vehicule.IdVehicule,
+                            c.Vehicule.Type,
+                            c.Vehicule.Marque,
+                            c.Vehicule.Modele,
+                            c.Vehicule.Immatriculation,
+                            c.Vehicule.Capacite,
+                            c.Vehicule.Annee,
+                            c.Vehicule.Couleur
+                        } : null
+                    })
+                    .OrderBy(c => c.Statut == "Disponible" ? 0 : 1) // Dispos d'abord
+                    .ThenBy(c => c.Nom)
+                    .ToListAsync();
+
+                return Ok(availableChauffeurs);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    error = "Erreur lors de la récupération des chauffeurs",
+                    details = ex.Message,
+                    stackTrace = ex.StackTrace
+                });
+            }
+        }
+        //public async Task<IActionResult> GetAvailable()
+        //{
+        //    try
+        //    {
+        //        var availableChauffeurs = await _context.Chauffeur
+        //            .Include(c => c.ApplicationUser)
+        //            .Include(c => c.Vehicule)
+        //            .Where(c => c.Statut == "Disponible")
+        //            .Select(c => new
+        //            {
+        //                c.IdChauffeur,
+        //                Nom = c.ApplicationUser.Nom,
+        //                Prenom = c.ApplicationUser.Prenom,
+        //                Telephone = c.ApplicationUser.PhoneNumber,
+        //                c.Statut,
+        //                Vehicule = c.Vehicule != null ? new
+        //                {
+        //                    c.Vehicule.Type,
+        //                    c.Vehicule.Immatriculation,
+        //                    c.Vehicule.Capacite
+        //                } : null
+        //            })
+        //            .ToListAsync();
+
+        //        return Ok(availableChauffeurs);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new { success = false, error = "Erreur lors de la récupération des chauffeurs", details = ex.Message });
+        //    }
+        //}
+
+        // PUT: api/Chauffeur/UpdateStatus/5
+        [HttpPut]
+        [Route("api/Chauffeur/UpdateStatus/{id}")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] string newStatus)
+        {
+            try
+            {
+                var chauffeur = await _context.Chauffeur.FindAsync(id);
+                if (chauffeur == null)
+                    return NotFound(new { success = false, message = "Chauffeur non trouvé" });
+
+                chauffeur.Statut = newStatus;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, statut = chauffeur.Statut });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, error = "Erreur lors de la mise à jour du statut", details = ex.Message });
+            }
+        }
+
+        // PUT: api/Chauffeur/UpdateProfile/5
+        [HttpPut]
+        [Route("api/Chauffeur/UpdateProfile/{id}")]
+        public async Task<IActionResult> UpdateProfile(int id, [FromBody] UpdateChauffeurProfileRequest request)
+        {
+            try
+            {
+                var chauffeur = await _context.Chauffeur
+                    .Include(c => c.ApplicationUser)
+                    .FirstOrDefaultAsync(c => c.IdChauffeur == id);
+
+                if (chauffeur == null)
+                    return NotFound(new { success = false, message = "Chauffeur non trouvé" });
+
+                // Mise à jour de l'ApplicationUser
+                var user = chauffeur.ApplicationUser;
+                user.Nom = request.Nom;
+                user.Prenom = request.Prenom;
+                user.PhoneNumber = request.Telephone;
+                user.Telephone = request.Telephone;
+                user.Adresse = request.Adresse;
+                user.Ville = request.Ville;
+
+                // Mise à jour du Chauffeur
+                chauffeur.NumeroPermis = request.NumeroPermis;
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new 
+                { 
+                    success = true, 
+                    message = "Profil mis à jour avec succès",
+                    user = new
+                    {
+                        nom = user.Nom,
+                        prenom = user.Prenom,
+                        telephone = user.Telephone,
+                        adresse = user.Adresse,
+                        ville = user.Ville,
+                        numeroPermis = chauffeur.NumeroPermis
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, error = "Erreur lors de la mise à jour du profil", details = ex.Message });
+            }
         }
 
         // POST: api/Chauffeur/Create
@@ -129,7 +281,114 @@ namespace AlloHonda.Controllers
                 });
             }
         }
+        // GET: api/Chauffeur/GetMissions/5
+        [HttpGet]
+        [Route("api/Chauffeur/GetMissions/{id}")]
+        public async Task<IActionResult> GetMissions(int id)
+        {
+            try
+            {
+                var missions = await _context.DemandeTransport
+                    .Include(d => d.Client)
+                        .ThenInclude(c => c.ApplicationUser)
+                    .Include(d => d.Trajet)
+                    .Where(d => d.ChauffeurId == id)
+                    .Select(d => new
+                    {
+                        id = d.IdDemande.ToString(),
+                        idDemande = d.IdDemande,
+                        type = d.TypeMarchandise,
+                        from = d.Depart,
+                        to = d.Arrivee,
+                        status = d.Statut,
+                        statut = d.Statut,
+                        progress = d.Statut == "TERMINEE" ? 100 : d.Statut == "EN_COURS" ? 50 : 0,
+                        scheduledTime = d.HeureDepart,
+                        dateDepart = d.DateDepart,
+                        distance = d.Trajet != null ? d.Trajet.Distance + " km" : "N/A",
+                        items = d.Volume > 0 ? (int)Math.Max(1, d.Volume * 2) : 1, // Mock item count based on volume
+                        weight = d.Poids + " kg",
+                        customer = (d.Client != null && d.Client.ApplicationUser != null) ? $"{d.Client.ApplicationUser.Prenom} {d.Client.ApplicationUser.Nom}" : "Client Inconnu",
+                        customerPhone = (d.Client != null && d.Client.ApplicationUser != null) ? d.Client.ApplicationUser.PhoneNumber : "",
+                        payment = d.PrixEstime + "€",
+                        prixEstime = d.PrixEstime
+                    })
+                    .OrderByDescending(m => m.idDemande)
+                    .ToListAsync();
+
+                return Ok(new { success = true, missions });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, error = "Erreur récupération missions", details = ex.Message });
+            }
+        }
+
+        // PUT: api/Chauffeur/UpdateMissionProgress/5
+        [HttpPut]
+        [Route("api/Chauffeur/UpdateMissionProgress/{id}")]
+        public async Task<IActionResult> UpdateMissionProgress(int id, [FromBody] UpdateProgressRequest request)
+        {
+            try
+            {
+                var demande = await _context.DemandeTransport.FindAsync(id);
+                if (demande == null)
+                    return NotFound(new { success = false, message = "Mission non trouvée" });
+
+                // Si progress est fourni, on peut ajuster le statut automatiquement
+                if (request.Progress >= 100)
+                {
+                    demande.Statut = "TERMINEE";
+                }
+                else if (request.Progress > 0)
+                {
+                    demande.Statut = "EN_COURS";
+                }
+
+                await _context.SaveChangesAsync();
+                return Ok(new { success = true, statut = demande.Statut });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, error = "Erreur mise à jour progression", details = ex.Message });
+            }
+        }
+
+        // PUT: api/Chauffeur/UpdatePosition/5
+        [HttpPut]
+        [Route("api/Chauffeur/UpdatePosition/{id}")]
+        public async Task<IActionResult> UpdatePosition(int id, [FromBody] UpdatePositionRequest request)
+        {
+            try
+            {
+                var chauffeur = await _context.Chauffeur.FindAsync(id);
+                if (chauffeur == null)
+                    return NotFound(new { success = false, message = "Chauffeur non trouvé" });
+
+                chauffeur.Latitude = request.Latitude;
+                chauffeur.Longitude = request.Longitude;
+
+                await _context.SaveChangesAsync();
+                return Ok(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, error = "Erreur mise à jour position", details = ex.Message });
+            }
+        }
+
+        public class UpdatePositionRequest
+        {
+            public double Latitude { get; set; }
+            public double Longitude { get; set; }
+        }
+
+        public class UpdateProgressRequest
+        {
+            public int Progress { get; set; }
+        }
     }
+
 
     public class CreateChauffeurRequest
     {
@@ -141,5 +400,15 @@ namespace AlloHonda.Controllers
         public string Adresse { get; set; }
         public string Ville { get; set; }
         public DateTime DateNaissance { get; set; }
+    }
+
+    public class UpdateChauffeurProfileRequest
+    {
+        public string Nom { get; set; }
+        public string Prenom { get; set; }
+        public string Telephone { get; set; }
+        public string Adresse { get; set; }
+        public string Ville { get; set; }
+        public string NumeroPermis { get; set; }
     }
 }

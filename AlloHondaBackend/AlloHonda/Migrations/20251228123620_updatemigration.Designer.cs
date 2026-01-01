@@ -25,7 +25,7 @@ namespace AlloHonda.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("AlloHanda.Models.Chauffeur", b =>
+            modelBuilder.Entity("AlloHonda.Models.Chauffeur", b =>
                 {
                     b.Property<int>("IdChauffeur")
                         .ValueGeneratedOnAdd()
@@ -49,7 +49,7 @@ namespace AlloHonda.Migrations
                     b.ToTable("Chauffeur");
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.Client", b =>
+            modelBuilder.Entity("AlloHonda.Models.Client", b =>
                 {
                     b.Property<int>("IdClient")
                         .ValueGeneratedOnAdd()
@@ -69,7 +69,7 @@ namespace AlloHonda.Migrations
                     b.ToTable("Client");
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.DemandeTransport", b =>
+            modelBuilder.Entity("AlloHonda.Models.DemandeTransport", b =>
                 {
                     b.Property<int>("IdDemande")
                         .ValueGeneratedOnAdd()
@@ -106,7 +106,7 @@ namespace AlloHonda.Migrations
                     b.ToTable("DemandeTransport");
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.Trajet", b =>
+            modelBuilder.Entity("AlloHonda.Models.Trajet", b =>
                 {
                     b.Property<int>("IdTrajet")
                         .ValueGeneratedOnAdd()
@@ -139,7 +139,7 @@ namespace AlloHonda.Migrations
                     b.ToTable("Trajet");
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.Vehicule", b =>
+            modelBuilder.Entity("AlloHonda.Models.Vehicule", b =>
                 {
                     b.Property<int>("IdVehicule")
                         .ValueGeneratedOnAdd()
@@ -394,35 +394,35 @@ namespace AlloHonda.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.Chauffeur", b =>
+            modelBuilder.Entity("AlloHonda.Models.Chauffeur", b =>
                 {
                     b.HasOne("AlloHonda.Models.ApplicationUser", "ApplicationUser")
                         .WithOne("Chauffeur")
-                        .HasForeignKey("AlloHanda.Models.Chauffeur", "ApplicationUserId")
+                        .HasForeignKey("AlloHonda.Models.Chauffeur", "ApplicationUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ApplicationUser");
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.Client", b =>
+            modelBuilder.Entity("AlloHonda.Models.Client", b =>
                 {
                     b.HasOne("AlloHonda.Models.ApplicationUser", "ApplicationUser")
                         .WithOne("Client")
-                        .HasForeignKey("AlloHanda.Models.Client", "ApplicationUserId")
+                        .HasForeignKey("AlloHonda.Models.Client", "ApplicationUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ApplicationUser");
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.DemandeTransport", b =>
+            modelBuilder.Entity("AlloHonda.Models.DemandeTransport", b =>
                 {
-                    b.HasOne("AlloHanda.Models.Chauffeur", "Chauffeur")
+                    b.HasOne("AlloHonda.Models.Chauffeur", "Chauffeur")
                         .WithMany("DemandesAcceptees")
                         .HasForeignKey("ChauffeurId");
 
-                    b.HasOne("AlloHanda.Models.Client", "Client")
+                    b.HasOne("AlloHonda.Models.Client", "Client")
                         .WithMany("Demandes")
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -433,22 +433,22 @@ namespace AlloHonda.Migrations
                     b.Navigation("Client");
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.Trajet", b =>
+            modelBuilder.Entity("AlloHonda.Models.Trajet", b =>
                 {
-                    b.HasOne("AlloHanda.Models.DemandeTransport", "DemandeTransport")
+                    b.HasOne("AlloHonda.Models.DemandeTransport", "DemandeTransport")
                         .WithOne("Trajet")
-                        .HasForeignKey("AlloHanda.Models.Trajet", "DemandeTransportId")
+                        .HasForeignKey("AlloHonda.Models.Trajet", "DemandeTransportId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("DemandeTransport");
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.Vehicule", b =>
+            modelBuilder.Entity("AlloHonda.Models.Vehicule", b =>
                 {
-                    b.HasOne("AlloHanda.Models.Chauffeur", "Chauffeur")
+                    b.HasOne("AlloHonda.Models.Chauffeur", "Chauffeur")
                         .WithOne("Vehicule")
-                        .HasForeignKey("AlloHanda.Models.Vehicule", "ChauffeurId")
+                        .HasForeignKey("AlloHonda.Models.Vehicule", "ChauffeurId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -506,7 +506,7 @@ namespace AlloHonda.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.Chauffeur", b =>
+            modelBuilder.Entity("AlloHonda.Models.Chauffeur", b =>
                 {
                     b.Navigation("DemandesAcceptees");
 
@@ -514,12 +514,12 @@ namespace AlloHonda.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.Client", b =>
+            modelBuilder.Entity("AlloHonda.Models.Client", b =>
                 {
                     b.Navigation("Demandes");
                 });
 
-            modelBuilder.Entity("AlloHanda.Models.DemandeTransport", b =>
+            modelBuilder.Entity("AlloHonda.Models.DemandeTransport", b =>
                 {
                     b.Navigation("Trajet")
                         .IsRequired();

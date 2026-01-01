@@ -10,7 +10,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using AlloHonda.Data;
 using AlloHonda.Models;
-using AlloHanda.Models;
+
 
 namespace AlloHonda.Controllers
 {
@@ -35,12 +35,15 @@ namespace AlloHonda.Controllers
             _signInManager = signInManager;
         }
 
+        
         [HttpPost("Login")]
+
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
             try
             {
-                Console.WriteLine(model.Email +" , "+ model.Password);
+                Console.WriteLine(model.Email + " , " + model.Password);
+
                 // Validation des entrées
                 if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
                 {
@@ -78,32 +81,173 @@ namespace AlloHonda.Controllers
                     });
                 }
 
-                // Déterminer le type d'utilisateur (Client ou Chauffeur)
+                // Déterminer le type d'utilisateur et récupérer toutes les données
                 string userType = "client";
                 int? clientId = null;
                 int? chauffeurId = null;
+                object userData = null;
 
                 // Vérifier si c'est un client
                 var client = await _context.Client
                     .Include(c => c.ApplicationUser)
+                    .Include(c => c.Demandes)
+                        .ThenInclude(d => d.Trajet)
+                    .Include(c => c.Demandes)
+                        .ThenInclude(d => d.Chauffeur)
+                            .ThenInclude(ch => ch.ApplicationUser)
                     .FirstOrDefaultAsync(c => c.ApplicationUserId == user.Id);
 
                 if (client != null)
                 {
                     userType = "client";
                     clientId = client.IdClient;
+
+                    // Récupérer toutes les données du client
+                    userData = new
+                    {
+                        // Informations de base
+                        idClient = client.IdClient,
+
+                        // Toutes les demandes du client avec détails
+                        demandes = client.Demandes.Select(d => new
+                        {
+                            idDemande = d.IdDemande,
+                            depart = d.Depart,
+                            arrivee = d.Arrivee,
+                            typeMarchandise = d.TypeMarchandise,
+                            descriptionMarchandise = d.DescriptionMarchandise,
+                            poids = d.Poids,
+                            volume = d.Volume,
+                            dateDepart = d.DateDepart.ToString("yyyy-MM-dd"),
+                            heureDepart = d.HeureDepart,
+                            instructions = d.Instructions,
+                            statut = d.Statut,
+                            prixEstime = d.PrixEstime,
+
+                            // Information sur le trajet si disponible
+                            trajet = d.Trajet != null ? new
+                            {
+                                idTrajet = d.Trajet.IdTrajet,
+                                adresseDepart = d.Trajet.AdresseDepart,
+                                adresseArrivee = d.Trajet.AdresseArrivee,
+                                distance = d.Trajet.Distance,
+                                dureeEstimee = d.Trajet.DureeEstimee
+                            } : null,
+
+                            // Information sur le chauffeur assigné si disponible
+                            chauffeur = d.Chauffeur != null ? new
+                            {
+                                idChauffeur = d.Chauffeur.IdChauffeur,
+                                statut = d.Chauffeur.Statut,
+                                nom = d.Chauffeur.ApplicationUser?.Nom,
+                                prenom = d.Chauffeur.ApplicationUser?.Prenom,
+                                telephone = d.Chauffeur.ApplicationUser?.Telephone
+                            } : null
+                        }).OrderByDescending(d => d.dateDepart).ToList(),
+
+                        // Statistiques des demandes
+                        statistiquesDemandes = new
+                        {
+                            totalDemandes = client.Demandes.Count,
+                            demandesEnAttente = client.Demandes.Count(d => d.Statut == "EN_ATTENTE"),
+                            demandesAcceptees = client.Demandes.Count(d => d.Statut == "ACCEPTEE"),
+                            demandesEnCours = client.Demandes.Count(d => d.Statut == "EN_COURS"),
+                            demandesTerminees = client.Demandes.Count(d => d.Statut == "TERMINEE")
+                        }
+                    };
                 }
                 else
                 {
                     // Vérifier si c'est un chauffeur
                     var chauffeur = await _context.Chauffeur
                         .Include(c => c.ApplicationUser)
+                        .Include(c => c.Vehicule)
+                        .Include(c => c.DemandesAcceptees)
+                            .ThenInclude(d => d.Client)
+                                .ThenInclude(cl => cl.ApplicationUser)
+                        .Include(c => c.DemandesAcceptees)
+                            .ThenInclude(d => d.Trajet)
                         .FirstOrDefaultAsync(c => c.ApplicationUserId == user.Id);
 
                     if (chauffeur != null)
                     {
                         userType = "chauffeur";
                         chauffeurId = chauffeur.IdChauffeur;
+
+                        // Récupérer toutes les données du chauffeur
+                        userData = new
+                        {
+                            // Informations de base
+                            idChauffeur = chauffeur.IdChauffeur,
+                            statut = chauffeur.Statut,
+                            numeroPermis = chauffeur.NumeroPermis,
+
+                            // Véhicule du chauffeur
+                            vehicule = chauffeur.Vehicule != null ? new
+                            {
+                                idVehicule = chauffeur.Vehicule.IdVehicule,
+                                type = chauffeur.Vehicule.Type,
+                                capacite = chauffeur.Vehicule.Capacite,
+                                immatriculation = chauffeur.Vehicule.Immatriculation
+                            } : null,
+
+                            // Toutes les demandes acceptées par le chauffeur
+                            demandesAcceptees = chauffeur.DemandesAcceptees.Select(d => new
+                            {
+                                idDemande = d.IdDemande,
+                                depart = d.Depart,
+                                arrivee = d.Arrivee,
+                                typeMarchandise = d.TypeMarchandise,
+                                descriptionMarchandise = d.DescriptionMarchandise,
+                                poids = d.Poids,
+                                volume = d.Volume,
+                                dateDepart = d.DateDepart.ToString("yyyy-MM-dd"),
+                                heureDepart = d.HeureDepart,
+                                instructions = d.Instructions,
+                                statut = d.Statut,
+                                prixEstime = d.PrixEstime,
+
+                                // Information sur le trajet si disponible
+                                trajet = d.Trajet != null ? new
+                                {
+                                    idTrajet = d.Trajet.IdTrajet,
+                                    adresseDepart = d.Trajet.AdresseDepart,
+                                    adresseArrivee = d.Trajet.AdresseArrivee,
+                                    distance = d.Trajet.Distance,
+                                    dureeEstimee = d.Trajet.DureeEstimee
+                                } : null,
+
+                                // Information sur le client
+                                client = d.Client != null ? new
+                                {
+                                    idClient = d.Client.IdClient,
+                                    nom = d.Client.ApplicationUser?.Nom,
+                                    prenom = d.Client.ApplicationUser?.Prenom,
+                                    telephone = d.Client.ApplicationUser?.Telephone,
+                                    email = d.Client.ApplicationUser?.Email
+                                } : null
+                            }).OrderByDescending(d => d.dateDepart).ToList(),
+
+                            // Statistiques des demandes
+                            statistiquesDemandes = new
+                            {
+                                totalDemandesAcceptees = chauffeur.DemandesAcceptees.Count,
+                                demandesEnAttente = chauffeur.DemandesAcceptees.Count(d => d.Statut == "EN_ATTENTE"),
+                                demandesAcceptees = chauffeur.DemandesAcceptees.Count(d => d.Statut == "ACCEPTEE"),
+                                demandesEnCours = chauffeur.DemandesAcceptees.Count(d => d.Statut == "EN_COURS"),
+                                demandesTerminees = chauffeur.DemandesAcceptees.Count(d => d.Statut == "TERMINEE")
+                            },
+
+                            // Information de disponibilité
+                            disponibilite = new
+                            {
+                                estDisponible = chauffeur.Statut == "Disponible",
+                                statutActuel = chauffeur.Statut,
+                                nombreTrajetsEnCours = chauffeur.DemandesAcceptees.Count(d => d.Statut == "EN_COURS")
+                            }
+                        };
+
+                        
                     }
                     else
                     {
@@ -118,6 +262,7 @@ namespace AlloHonda.Controllers
                 // Générer un token JWT
                 var token = GenerateJwtToken(user.Email, userType == "client" ? "Client" : "Chauffeur", user.Id);
 
+                Console.WriteLine();
                 return Ok(new
                 {
                     success = true,
@@ -129,16 +274,17 @@ namespace AlloHonda.Controllers
                         nom = user.Nom,
                         prenom = user.Prenom,
                         telephone = user.Telephone,
-                        dateNaissance = user.DateNaissance.ToString("yyyy-MM-dd"),
+                        DateNaissance = user.DateNaissance.ToString("yyyy-MM-dd"),
                         adresse = user.Adresse,
                         ville = user.Ville,
                         photoProfil = user.PhotoProfil,
-                        roles = new[] { userType == "client" ? "Client" : "Chauffeur" }
+                        Roles = new[] { userType == "client" ? "Client" : "Chauffeur" },
+                        UserType = userType,
+                        ClientId = clientId,
+                        ChauffeurId = chauffeurId,
+                        UserData = userData,
+                        Token = token
                     },
-                    userType = userType,
-                    clientId = clientId,
-                    chauffeurId = chauffeurId,
-                    token = token
                 });
             }
             catch (Exception ex)
@@ -153,6 +299,7 @@ namespace AlloHonda.Controllers
                 });
             }
         }
+
 
         [HttpPost("CheckEmail")]
         public async Task<IActionResult> CheckEmail([FromBody] EmailCheckModel model)

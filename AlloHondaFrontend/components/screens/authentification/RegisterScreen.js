@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function RegisterScreen({ navigation }) {
   const [formData, setFormData] = useState({
@@ -30,7 +31,7 @@ export default function RegisterScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('Non testé');
   const [isSimulator, setIsSimulator] = useState(false);
-  
+
   const scrollViewRef = useRef(null);
 
   useEffect(() => {
@@ -39,13 +40,13 @@ export default function RegisterScreen({ navigation }) {
       // Si c'est iOS et on est en développement, vérifier si c'est un simulateur
       const isIOSSimulator = Platform.OS === 'ios' && __DEV__;
       setIsSimulator(isIOSSimulator);
-      
+
       console.log('📱 Plateforme:', Platform.OS);
       console.log('🔧 Mode développement:', __DEV__);
       console.log('📱 Est simulateur?', isIOSSimulator);
       console.log('🌐 URL API détectée:', getApiBaseUrl());
     };
-    
+
     checkDevice();
   }, []);
 
@@ -58,30 +59,30 @@ export default function RegisterScreen({ navigation }) {
 
   const validateForm = () => {
     const errors = [];
-    
+
     if (!formData.nom.trim()) errors.push('Le nom est requis');
     if (!formData.prenom.trim()) errors.push('Le prénom est requis');
-    
+
     if (!formData.email.trim()) {
       errors.push('L\'email est requis');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errors.push('Email invalide');
     }
-    
+
     if (!formData.telephone.trim()) {
       errors.push('Le téléphone est requis');
     }
-    
+
     if (!formData.password) {
       errors.push('Le mot de passe est requis');
     } else if (formData.password.length < 6) {
       errors.push('Le mot de passe doit contenir au moins 6 caractères');
     }
-    
+
     if (formData.password !== formData.confirmPassword) {
       errors.push('Les mots de passe ne correspondent pas');
     }
-    
+
     if (errors.length > 0) {
       Alert.alert('Erreur de validation', errors.join('\n'));
       return false;
@@ -91,7 +92,7 @@ export default function RegisterScreen({ navigation }) {
 
   const formatDateForAPI = (dateString) => {
     if (!dateString) return null;
-    
+
     const parts = dateString.split('/');
     if (parts.length === 3) {
       const [day, month, year] = parts;
@@ -104,14 +105,14 @@ export default function RegisterScreen({ navigation }) {
   const getApiBaseUrl = () => {
     // Remplacez par l'IP de votre PC
     const envApiUrl = process.env.EXPO_PUBLIC_API_URL;
-    
+
     return envApiUrl;
   };
 
   const getApiEndpoint = () => {
     const API_BASE = getApiBaseUrl();
-    
-    return formData.userType === 'client' 
+
+    return formData.userType === 'client'
       ? `${API_BASE}/api/Clients/Create`
       : `${API_BASE}/api/Chauffeur/Create`;
   };
@@ -120,14 +121,14 @@ export default function RegisterScreen({ navigation }) {
   const navigateToUserDashboard = (userData) => {
     console.log('🚀 Navigation vers dashboard, userType:', formData.userType);
     console.log('📦 Données utilisateur:', userData);
-    
+
     if (formData.userType === 'client') {
       // Naviguer vers la page d'accueil client
       navigation.reset({
         index: 0,
-        routes: [{ 
-          name: 'Client', 
-          params: { 
+        routes: [{
+          name: 'Client',
+          params: {
             user: userData,
             title: `Bonjour ${userData.prenom || ''}`
           }
@@ -137,9 +138,9 @@ export default function RegisterScreen({ navigation }) {
       // Naviguer vers le tableau de bord chauffeur
       navigation.reset({
         index: 0,
-        routes: [{ 
-          name: 'Driver', 
-          params: { 
+        routes: [{
+          name: 'Driver',
+          params: {
             user: userData,
             title: `Tableau de Bord - ${userData.prenom || ''}`
           }
@@ -153,21 +154,21 @@ export default function RegisterScreen({ navigation }) {
       setConnectionStatus('Test en cours...');
       const testUrl = getApiBaseUrl();
       console.log('🔍 Test de connexion à:', testUrl);
-      
+
       // Utiliser AbortController pour timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
-      
-      const response = await fetch(testUrl, { 
+
+      const response = await fetch(testUrl, {
         method: 'GET',
         signal: controller.signal,
         headers: {
           'Accept': 'application/json',
         }
       });
-      
+
       clearTimeout(timeoutId);
-      
+
       console.log('✅ Test réussi - Statut:', response.status);
       setConnectionStatus('Connecté ✓');
       return true;
@@ -199,17 +200,17 @@ Si l'API ne répond pas:
   const handleRegister = async () => {
     console.log('🚀 Début de l\'inscription');
     console.log('📱 Type d\'utilisateur:', formData.userType);
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     setLoading(true);
-    
+
     // Test de connexion avant l'inscription
     console.log('🔍 Test de connexion au serveur...');
     const isConnected = await testServerConnection();
-    
+
     if (!isConnected) {
       const apiUrl = getApiBaseUrl();
       Alert.alert(
@@ -233,7 +234,7 @@ d'accéder à localhost depuis votre iPhone.`,
       setLoading(false);
       return;
     }
-    
+
     try {
       const userData = {
         nom: formData.nom,
@@ -245,16 +246,16 @@ d'accéder à localhost depuis votre iPhone.`,
         ville: formData.ville || '',
         dateNaissance: formatDateForAPI(formData.dateNaissance),
         photoProfil: "default-avatar.png"
-      };  
-      
+      };
+
       const API_URL = getApiEndpoint();
       console.log('📡 Envoi des données à:', API_URL);
       console.log('📦 Données:', JSON.stringify(userData, null, 2));
-      
+
       // Timeout de 30 secondes pour l'inscription
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
-      
+
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
@@ -264,14 +265,14 @@ d'accéder à localhost depuis votre iPhone.`,
         body: JSON.stringify(userData),
         signal: controller.signal,
       });
-      
+
       clearTimeout(timeoutId);
-      
+
       console.log('📊 Réponse reçue - Statut:', response.status);
-      
+
       const responseText = await response.text();
       console.log('📄 Contenu de la réponse:', responseText);
-      
+
       let data;
       try {
         data = JSON.parse(responseText);
@@ -280,7 +281,7 @@ d'accéder à localhost depuis votre iPhone.`,
         console.log('Réponse brute:', responseText.substring(0, 200));
         throw new Error('Le serveur a retourné une réponse invalide (non-JSON)');
       }
-      
+
       if (response.ok) {
         // Préparer les données utilisateur pour la navigation
         const userResponseData = {
@@ -289,24 +290,32 @@ d'accéder à localhost depuis votre iPhone.`,
           clientId: data.clientId || null,
           chauffeurId: data.chauffeurId || null
         };
-        
+
         Alert.alert(
           '🎉 Félicitations !',
           data.message || `Votre compte ${formData.userType === 'client' ? 'client' : 'chauffeur'} a été créé avec succès !`,
           [
             {
-              text: 'Continuer', 
+              text: 'Continuer',
               onPress: () => {
                 console.log('✅ Inscription réussie, données:', data);
                 console.log('📍 Navigation vers:', formData.userType === 'client' ? 'ClientHomepage' : 'ChauffeurDashboard');
-                navigateToUserDashboard(userResponseData);
+
+                AsyncStorage.setItem('@user_data', JSON.stringify(userResponseData))
+                  .then(() => {
+                    navigateToUserDashboard(userResponseData);
+                  })
+                  .catch(err => {
+                    console.error('Erreur sauvegarde session:', err);
+                    navigateToUserDashboard(userResponseData);
+                  });
               },
             },
           ]
         );
       } else {
-        const errorMessage = data.errors 
-          ? Array.isArray(data.errors) 
+        const errorMessage = data.errors
+          ? Array.isArray(data.errors)
             ? data.errors.join('\n')
             : data.errors
           : data.error || data.message || `Erreur HTTP ${response.status}`;
@@ -314,9 +323,9 @@ d'accéder à localhost depuis votre iPhone.`,
       }
     } catch (error) {
       console.error('❌ Erreur lors de l\'inscription:', error);
-      
+
       let errorMessage = 'Une erreur est survenue lors de l\'inscription';
-      
+
       if (error.name === 'AbortError') {
         errorMessage = '⏱️ Le serveur ne répond pas (timeout 30s)';
       } else if (error.message.includes('Network') || error.message.includes('fetch')) {
@@ -333,7 +342,7 @@ Solution:
       } else {
         errorMessage = error.message;
       }
-      
+
       Alert.alert('Erreur', errorMessage);
     } finally {
       setLoading(false);
@@ -353,17 +362,17 @@ Solution:
           <MaterialCommunityIcons name="truck-fast" size={60} color="#1A56DB" />
           <Text style={styles.title}>ALLOHONDA</Text>
           <Text style={styles.subtitle}>Créez votre compte</Text>
-          
+
           {/* Indicateur de connexion */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.connectionStatus}
             onPress={showConnectionHelp}
           >
             <View style={styles.statusRow}>
-              <Ionicons 
-                name={connectionStatus.includes('Connecté') ? "checkmark-circle" : "alert-circle"} 
-                size={16} 
-                color={connectionStatus.includes('Connecté') ? "#10B981" : "#EF4444"} 
+              <Ionicons
+                name={connectionStatus.includes('Connecté') ? "checkmark-circle" : "alert-circle"}
+                size={16}
+                color={connectionStatus.includes('Connecté') ? "#10B981" : "#EF4444"}
               />
               <Text style={[
                 styles.statusText,
@@ -558,7 +567,7 @@ Solution:
                 secureTextEntry={!showPassword}
                 editable={!loading}
               />
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 disabled={loading}
                 style={styles.eyeButton}
@@ -596,14 +605,14 @@ Solution:
           </View>
 
           {/* Bouton TEST API */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.testButton}
             onPress={async () => {
               setLoading(true);
               const isConnected = await testServerConnection();
               Alert.alert(
                 isConnected ? '✅ Connexion réussie' : '❌ Échec de connexion',
-                isConnected 
+                isConnected
                   ? `Le serveur API est accessible!\n\nURL: ${getApiBaseUrl()}`
                   : `Impossible de joindre le serveur.\n\nURL: ${getApiBaseUrl()}\n\nVérifiez que l'API .NET est démarrée.`
               );
@@ -618,7 +627,7 @@ Solution:
           </TouchableOpacity>
 
           {/* Bouton d'inscription */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.registerButton, loading && styles.registerButtonDisabled]}
             onPress={handleRegister}
             disabled={loading}
@@ -642,7 +651,7 @@ Solution:
           {/* Lien vers connexion */}
           <View style={styles.loginContainer}>
             <Text style={styles.loginText}>Vous avez déjà un compte ?</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => !loading && navigation.navigate('Login')}
               disabled={loading}
             >
@@ -650,7 +659,7 @@ Solution:
             </TouchableOpacity>
           </View>
         </View>
-        
+
         {/* Espace en bas */}
         <View style={styles.bottomSpacer} />
       </ScrollView>

@@ -5,13 +5,11 @@ import { Ionicons } from "@expo/vector-icons";
 const AllocationHeader = ({ search, onSearchChange }) => {
   return (
     <View style={styles.container}>
-      {/* Header avec gradient subtle */}
       <View style={styles.headerTop}>
         <Text style={styles.title}>Allocation</Text>
         <View style={styles.titleLine} />
       </View>
 
-      {/* Search bar améliorée */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBox}>
           <View style={styles.searchIconContainer}>
@@ -33,8 +31,6 @@ const AllocationHeader = ({ search, onSearchChange }) => {
     </View>
   );
 };
-
-export default AllocationHeader;
 
 const styles = StyleSheet.create({
   container: {
@@ -119,3 +115,5 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 });
+
+export default AllocationHeader;

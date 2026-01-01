@@ -3,18 +3,31 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 const TruckCard = ({ truck, onAllocate }) => {
-  const isAvailable = truck.status === "AVAILABLE";
+  const isAvailable = truck.status === "Disponible";
 
   const getStatus = () => {
     switch (truck.status) {
-      case "AVAILABLE":
-        return { label: "DISPONIBLE", color: "#10B981", bg: "rgba(16, 185, 129, 0.1)", icon: "checkmark-circle" };
-      case "IN_TRANSIT":
-        return { label: "EN TRANSIT", color: "#3B82F6", bg: "rgba(59, 130, 246, 0.1)", icon: "time" };
-      case "MAINTENANCE":
-        return { label: "MAINTENANCE", color: "#F59E0B", bg: "rgba(245, 158, 11, 0.1)", icon: "construct" };
+      case "Disponible":
+        return { 
+          label: "DISPONIBLE", 
+          color: "#10B981", 
+          bg: "rgba(16, 185, 129, 0.1)", 
+          icon: "checkmark-circle" 
+        };
+      case "Occupe":
+        return { 
+          label: "OCCUPÉ", 
+          color: "#F59E0B", 
+          bg: "rgba(245, 158, 11, 0.1)", 
+          icon: "time" 
+        };
       default:
-        return { label: "", color: "#999", bg: "rgba(156, 163, 175, 0.1)", icon: "help" };
+        return { 
+          label: truck.status || "", 
+          color: "#6B7280", 
+          bg: "rgba(156, 163, 175, 0.1)", 
+          icon: "help" 
+        };
     }
   };
 
@@ -22,10 +35,8 @@ const TruckCard = ({ truck, onAllocate }) => {
 
   return (
     <View style={styles.card}>
-      {/* Shadow container */}
       <View style={styles.cardShadow} />
-      
-      {/* Header avec badge et actions */}
+
       <View style={styles.cardHeader}>
         <View style={styles.statusContainer}>
           <View style={[styles.statusIcon, { backgroundColor: status.bg }]}>
@@ -40,7 +51,6 @@ const TruckCard = ({ truck, onAllocate }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Image camion avec overlay */}
       <View style={styles.imageContainer}>
         <Image
           source={{
@@ -50,11 +60,10 @@ const TruckCard = ({ truck, onAllocate }) => {
         />
         <View style={styles.imageOverlay} />
         <View style={styles.idBadge}>
-          <Text style={styles.idText}>#{truck.id}</Text>
+          <Text style={styles.idText}>ID: {truck.id}</Text>
         </View>
       </View>
 
-      {/* Infos camion */}
       <View style={styles.infoContainer}>
         <View style={styles.titleRow}>
           <Text style={styles.title} numberOfLines={1}>
@@ -71,12 +80,11 @@ const TruckCard = ({ truck, onAllocate }) => {
             <Text style={styles.specText}>{truck.capacity}</Text>
           </View>
           <View style={styles.specItem}>
-            <Ionicons name="speedometer-outline" size={14} color="#6B7280" />
-            <Text style={styles.specText}>{truck.fuel || "Diesel"}</Text>
+            <Ionicons name="document-text-outline" size={14} color="#6B7280" />
+            <Text style={styles.specText}>{truck.license || "N° permis"}</Text>
           </View>
         </View>
 
-        {/* Driver info */}
         <View style={styles.driverContainer}>
           <View style={styles.driverAvatar}>
             <Ionicons name="person-outline" size={16} color="#6B7280" />
@@ -86,28 +94,12 @@ const TruckCard = ({ truck, onAllocate }) => {
             <Text style={styles.driverName}>
               {truck.driver || "Non assigné"}
             </Text>
+            {truck.driverPhone && (
+              <Text style={styles.driverPhone}>{truck.driverPhone}</Text>
+            )}
           </View>
-          {truck.location && (
-            <View style={styles.location}>
-              <Ionicons name="location-outline" size={14} color="#9CA3AF" />
-              <Text style={styles.locationText}>{truck.location}</Text>
-            </View>
-          )}
         </View>
 
-        {/* Maintenance info */}
-        {truck.status === "MAINTENANCE" && truck.returnDate && (
-          <View style={styles.maintenanceContainer}>
-            <View style={styles.maintenanceIcon}>
-              <Ionicons name="calendar-outline" size={14} color="#F59E0B" />
-            </View>
-            <Text style={styles.maintenanceText}>
-              Retour prévu : <Text style={styles.maintenanceDate}>{truck.returnDate}</Text>
-            </Text>
-          </View>
-        )}
-
-        {/* Bouton action */}
         <TouchableOpacity
           disabled={!isAvailable}
           style={[
@@ -118,18 +110,25 @@ const TruckCard = ({ truck, onAllocate }) => {
           onPress={() => isAvailable && onAllocate(truck)}
         >
           <Text style={styles.buttonText}>
-            {isAvailable ? "Allouer ce camion" : "Indisponible"}
+            {isAvailable ? "Sélectionner ce chauffeur" : "Indisponible"}
           </Text>
           {isAvailable && (
             <Ionicons name="arrow-forward" size={18} color="#fff" style={styles.buttonIcon} />
           )}
         </TouchableOpacity>
+
+        {!isAvailable && (
+          <View style={styles.unavailableInfo}>
+            <Ionicons name="information-circle-outline" size={14} color="#F59E0B" />
+            <Text style={styles.unavailableText}>
+              Ce chauffeur est actuellement occupé
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );
 };
-
-export default TruckCard;
 
 const styles = StyleSheet.create({
   card: {
@@ -263,7 +262,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8FAFD",
     padding: 12,
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   driverAvatar: {
     width: 36,
@@ -287,47 +286,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#374151",
+    marginBottom: 2,
   },
-  location: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  locationText: {
-    fontSize: 11,
+  driverPhone: {
+    fontSize: 12,
     color: "#6B7280",
-    marginLeft: 4,
-    fontWeight: "500",
-  },
-  maintenanceContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(245, 158, 11, 0.1)",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  maintenanceIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(245, 158, 11, 0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  maintenanceText: {
-    fontSize: 13,
-    color: "#92400E",
-    fontWeight: "500",
-  },
-  maintenanceDate: {
-    fontWeight: "700",
   },
   button: {
     backgroundColor: "#0066FF",
@@ -355,4 +318,21 @@ const styles = StyleSheet.create({
   buttonIcon: {
     marginLeft: 8,
   },
+  unavailableInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 12,
+    padding: 8,
+    backgroundColor: "rgba(245, 158, 11, 0.1)",
+    borderRadius: 8,
+  },
+  unavailableText: {
+    fontSize: 12,
+    color: "#92400E",
+    marginLeft: 6,
+    fontWeight: "500",
+  },
 });
+
+export default TruckCard;

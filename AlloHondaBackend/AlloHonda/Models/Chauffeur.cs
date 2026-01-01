@@ -1,8 +1,8 @@
-﻿using AlloHonda.Models;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Collections.Generic;
 
-namespace AlloHanda.Models
+namespace AlloHonda.Models
 {
     public class Chauffeur
     {
@@ -13,15 +13,21 @@ namespace AlloHanda.Models
         public string ApplicationUserId { get; set; }
 
         [ForeignKey(nameof(ApplicationUserId))]
-        public ApplicationUser ApplicationUser { get; set; }
+        public virtual ApplicationUser ApplicationUser { get; set; }
 
         [Required]
         public string Statut { get; set; } // Disponible / Occupe
 
-        // Navigation
-        public Vehicule Vehicule { get; set; }
+        public string? NumeroPermis { get; set; }
+        public DateTime? DateExpirationPermis { get; set; }
 
-        public ICollection<DemandeTransport> DemandesAcceptees { get; set; }
+        // Navigation
+        public virtual Vehicule Vehicule { get; set; }
+
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
+
+        public virtual ICollection<DemandeTransport> DemandesAcceptees { get; set; }
             = new List<DemandeTransport>();
     }
 }

@@ -1,8 +1,8 @@
-﻿using AlloHonda.Models;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Collections.Generic;
 
-namespace AlloHanda.Models
+namespace AlloHonda.Models
 {
     public class Client
     {
@@ -14,11 +14,10 @@ namespace AlloHanda.Models
         public string ApplicationUserId { get; set; }
 
         [ForeignKey(nameof(ApplicationUserId))]
-        public ApplicationUser ApplicationUser { get; set; }
+        public virtual ApplicationUser ApplicationUser { get; set; }
 
         // Navigation
-        public ICollection<DemandeTransport> Demandes { get; set; }
+        public virtual ICollection<DemandeTransport> Demandes { get; set; }
             = new List<DemandeTransport>();
     }
 }
-

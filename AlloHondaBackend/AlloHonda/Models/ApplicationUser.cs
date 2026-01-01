@@ -1,5 +1,4 @@
-﻿using AlloHanda.Models;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 
 namespace AlloHonda.Models
 {
