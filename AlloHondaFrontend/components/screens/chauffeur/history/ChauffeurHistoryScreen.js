@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,11 @@ import {
   Dimensions,
   Image,
   Modal,
+  ActivityIndicator,
+  RefreshControl,
+  Alert
 } from "react-native";
+import axios from "axios";
 import {
   Ionicons,
   MaterialIcons,
@@ -27,154 +31,94 @@ const ChauffeurHistoryScreen = ({ user, navigation }) => {
   const [invoiceModalVisible, setInvoiceModalVisible] = useState(false);
 
   // Historique des missions
-  const missionsHistory = [
-    {
-      id: "MISSION-2024-0456",
-      date: "15 Avril 2024",
-      type: "Express 24h",
-      from: "Paris CDG",
-      to: "Lyon Part-Dieu",
-      status: "complétée",
-      distance: "450 km",
-      duration: "6h 30min",
-      earnings: "145€",
-      rating: 5,
-      customer: "Sophie Martin",
-      customerRating: 4.8,
-      vehicle: "Honda Prologue électrique",
-      items: 2,
-      weight: "28 kg",
-      fuelCost: "18€",
-      tollCost: "24€",
-      netEarnings: "103€",
-      invoiceNumber: "FAC-2024-0456",
-    },
-    {
-      id: "MISSION-2024-0455",
-      date: "12 Avril 2024",
-      type: "Standard",
-      from: "Paris",
-      to: "Bordeaux",
-      status: "complétée",
-      distance: "580 km",
-      duration: "5h 45min",
-      earnings: "120€",
-      rating: 4,
-      customer: "Thomas Bernard",
-      customerRating: 4.5,
-      vehicle: "Honda CR-V Hybrid",
-      items: 3,
-      weight: "42 kg",
-      fuelCost: "25€",
-      tollCost: "32€",
-      netEarnings: "63€",
-      invoiceNumber: "FAC-2024-0455",
-    },
-    {
-      id: "MISSION-2024-0454",
-      date: "10 Avril 2024",
-      type: "Express 24h",
-      from: "Lyon",
-      to: "Nice",
-      status: "complétée",
-      distance: "310 km",
-      duration: "4h 15min",
-      earnings: "95€",
-      rating: 5,
-      customer: "Marie Laurent",
-      customerRating: 4.9,
-      vehicle: "Honda Civic e:HEV",
-      items: 1,
-      weight: "15 kg",
-      fuelCost: "12€",
-      tollCost: "18€",
-      netEarnings: "65€",
-      invoiceNumber: "FAC-2024-0454",
-    },
-    {
-      id: "MISSION-2024-0453",
-      date: "5 Avril 2024",
-      type: "International",
-      from: "Paris",
-      to: "Genève",
-      status: "complétée",
-      distance: "520 km",
-      duration: "6h 15min",
-      earnings: "210€",
-      rating: 5,
-      customer: "Pierre Dubois",
-      customerRating: 4.7,
-      vehicle: "Honda HR-V",
-      items: 2,
-      weight: "35 kg",
-      fuelCost: "28€",
-      tollCost: "45€",
-      netEarnings: "137€",
-      invoiceNumber: "FAC-2024-0453",
-    },
-    {
-      id: "MISSION-2024-0452",
-      date: "2 Avril 2024",
-      type: "Standard",
-      from: "Marseille",
-      to: "Toulouse",
-      status: "complétée",
-      distance: "400 km",
-      duration: "4h 30min",
-      earnings: "135€",
-      rating: 4,
-      customer: "Sophie Martin",
-      customerRating: 4.8,
-      vehicle: "Honda CR-V Hybrid",
-      items: 4,
-      weight: "50 kg",
-      fuelCost: "22€",
-      tollCost: "28€",
-      netEarnings: "85€",
-      invoiceNumber: "FAC-2024-0452",
-    },
-    {
-      id: "MISSION-2024-0451",
-      date: "28 Mars 2024",
-      type: "Fragile",
-      from: "Lille",
-      to: "Strasbourg",
-      status: "complétée",
-      distance: "480 km",
-      duration: "5h 45min",
-      earnings: "165€",
-      rating: 5,
-      customer: "Paul Bernard",
-      customerRating: 4.6,
-      vehicle: "Honda Prologue électrique",
-      items: 1,
-      weight: "18 kg",
-      fuelCost: "20€",
-      tollCost: "35€",
-      netEarnings: "110€",
-      invoiceNumber: "FAC-2024-0451",
-    },
-  ];
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [missionsHistory, setMissionsHistory] = useState([]);
 
-  // Statistiques
+  const Api_Base = process.env.EXPO_PUBLIC_API_URL;
+  const chauffeurId = user?.chauffeurId || user?.ChauffeurId || user?.UserData?.idChauffeur;
+  const token = user?.token || user?.Token;
+
+  useEffect(() => {
+    fetchMissions();
+  }, [chauffeurId]);
+
+  const fetchMissions = async (showLoading = true) => {
+    if (!chauffeurId) return;
+    try {
+      if (showLoading) setLoading(true);
+      const url = `${Api_Base}/api/Chauffeur/GetMissions/${chauffeurId}`;
+      const response = await axios.get(url, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (response.data.success) {
+        // Filter only completed missions
+        const completed = response.data.missions
+          .filter(m => (m.statut || m.status) === "TERMINEE")
+          .map(m => ({
+            id: `MISSION-${new Date(m.dateDepart).getFullYear()}-${m.idDemande.toString().padStart(4, '0')}`,
+            dbId: m.idDemande,
+            date: new Date(m.dateDepart).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+            type: m.type || "Transport",
+            from: m.from,
+            to: m.to,
+            status: "complétée",
+            distance: m.distance || "0 km",
+            duration: m.duration || "N/A",
+            earnings: `${m.prixEstime}€`,
+            rating: 5,
+            customer: m.customer || "Client",
+            vehicle: user?.UserData?.vehicule?.type || "Véhicule",
+            items: m.items || 1,
+            weight: m.weight || "0 kg",
+            fuelCost: `${Math.round(m.prixEstime * 0.12)}€`, // Simulated fuel cost
+            tollCost: `${Math.round(m.prixEstime * 0.08)}€`, // Simulated toll cost
+            netEarnings: `${m.prixEstime - Math.round(m.prixEstime * 0.20)}€`,
+            invoiceNumber: m.invoiceNumber || `FAC-${new Date().getFullYear()}-${m.idDemande}`
+          }));
+        setMissionsHistory(completed);
+      }
+    } catch (error) {
+      console.error("Error fetching chauffeur missions:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    console.log("missionsHistory", missionsHistory);
+  }, [missionsHistory]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchMissions(false);
+  }, [chauffeurId]);
+
+  // Derived Statistics
+  const totalGross = missionsHistory.reduce((sum, m) => sum + parseFloat(m.earnings), 0);
+  const totalFees = missionsHistory.reduce((sum, m) => sum + parseFloat(m.fuelCost) + parseFloat(m.tollCost), 0);
+  const totalNet = totalGross - totalFees;
+
   const statsData = {
     week: {
-      totalMissions: 12,
-      totalEarnings: "1,450€",
-      totalDistance: "2,850 km",
-      averageRating: 4.7,
+      totalMissions: missionsHistory.length, // Ideally filtered by date
+      totalEarnings: `${totalGross}€`,
+      totalDistance: `${missionsHistory.reduce((sum, m) => sum + parseFloat(m.distance), 0)} km`,
+      averageRating: 4.9,
     },
     month: {
-      totalMissions: 28,
-      totalEarnings: "3,450€",
-      totalDistance: "6,240 km",
-      averageRating: 4.8,
+      totalMissions: missionsHistory.length,
+      totalEarnings: `${totalGross}€`,
+      totalDistance: `${missionsHistory.reduce((sum, m) => sum + parseFloat(m.distance), 0)} km`,
+      averageRating: 4.9,
     },
     year: {
-      totalMissions: 156,
-      totalEarnings: "18,750€",
-      totalDistance: "35,200 km",
-      averageRating: 4.8,
+      totalMissions: missionsHistory.length,
+      totalEarnings: `${totalGross}€`,
+      totalDistance: `${missionsHistory.reduce((sum, m) => sum + parseFloat(m.distance), 0)} km`,
+      averageRating: 4.9,
     },
   };
 
@@ -405,7 +349,11 @@ const ChauffeurHistoryScreen = ({ user, navigation }) => {
         </View>
       </Modal>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#E31E24"]} />}
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
@@ -537,7 +485,9 @@ const ChauffeurHistoryScreen = ({ user, navigation }) => {
 
         {/* Liste des missions */}
         <View style={styles.missionsList}>
-          {filteredMissions.length > 0 ? (
+          {loading && !refreshing ? (
+            <ActivityIndicator size="large" color="#E31E24" style={{ marginTop: 20 }} />
+          ) : filteredMissions.length > 0 ? (
             filteredMissions.map(renderMissionCard)
           ) : (
             <View style={styles.emptyState}>
@@ -559,18 +509,18 @@ const ChauffeurHistoryScreen = ({ user, navigation }) => {
         {/* Résumé financier */}
         <View style={styles.section}>
           <View style={styles.financialSummary}>
-            <Text style={styles.financialTitle}>Résumé financier</Text>
+            <Text style={styles.financialTitle}>Résumé financier Global</Text>
             <View style={styles.financialRow}>
               <Text style={styles.financialLabel}>Gains bruts totaux</Text>
-              <Text style={styles.financialValue}>4,870€</Text>
+              <Text style={styles.financialValue}>{totalGross}€</Text>
             </View>
             <View style={styles.financialRow}>
-              <Text style={styles.financialLabel}>Frais totaux</Text>
-              <Text style={[styles.financialValue, styles.expenseValue]}>- 1,240€</Text>
+              <Text style={styles.financialLabel}>Frais estimés (carburant & péages)</Text>
+              <Text style={[styles.financialValue, styles.expenseValue]}>- {totalFees}€</Text>
             </View>
             <View style={[styles.financialRow, styles.netRow]}>
               <Text style={[styles.financialLabel, styles.netLabel]}>Gains nets totaux</Text>
-              <Text style={[styles.financialValue, styles.netValue]}>3,630€</Text>
+              <Text style={[styles.financialValue, styles.netValue]}>{totalNet}€</Text>
             </View>
           </View>
         </View>

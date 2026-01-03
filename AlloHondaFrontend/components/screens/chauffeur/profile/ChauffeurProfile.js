@@ -22,12 +22,13 @@ import {
   FontAwesome5,
 } from "@expo/vector-icons";
 import axios from "axios";
+import * as ImagePicker from 'expo-image-picker';
 
 const { width } = Dimensions.get("window");
 
 const ChauffeurProfile = ({ user, navigation }) => {
   console.log("User data in ChauffeurProfile:", JSON.stringify(user, null, 2));
-  
+
   const [notifications, setNotifications] = useState(true);
   const [autoAccept, setAutoAccept] = useState(false);
   const [locationSharing, setLocationSharing] = useState(true);
@@ -35,6 +36,29 @@ const ChauffeurProfile = ({ user, navigation }) => {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingField, setEditingField] = useState(null);
   const [editValue, setEditValue] = useState("");
+  const [vehicleModalVisible, setVehicleModalVisible] = useState(false);
+  const [vehicleLoading, setVehicleLoading] = useState(true);
+  const [assignedVehicle, setAssignedVehicle] = useState(null);
+  const [editVehicle, setEditVehicle] = useState({
+    type: "",
+    marque: "",
+    modele: "",
+    immatriculation: "",
+    capacite: 0,
+    annee: new Date().getFullYear(),
+    couleur: "",
+    typeEnergie: "",
+    kilometrage: 0,
+    dateAssuranceExpire: new Date().toISOString(),
+    consommationMoyenne: 0,
+    autonomie: 0,
+    imageUrl: "",
+    imageBase64: "",
+    dateDerniereRevision: null,
+    dateProchaineRevision: null,
+    numeroChassis: "",
+    observations: ""
+  });
 
   // Données du chauffeur - CORRECTION ICI
   const [driverData, setDriverData] = useState({
@@ -60,20 +84,102 @@ const ChauffeurProfile = ({ user, navigation }) => {
     console.log("Driver Data Loaded:", driverData);
     console.log("User permis:", user?.userData?.numeroPermis);
     console.log("User statut:", user?.userData?.statut);
+    fetchVehicleData();
   }, [driverData, user]);
 
-  // Véhicule assigné
-  const vehicleData = {
-    model: "Honda Prologue électrique",
-    plateNumber: "AB-123-CD",
-    year: "2023",
-    color: "Noir",
-    capacity: "450 kg",
-    fuelType: "Électrique",
-    lastService: "15/03/2024",
-    nextService: "15/06/2024",
-    insuranceExpiry: "30/09/2024",
+  const fetchVehicleData = async () => {
+    const chauffeurId = user?.userData?.idChauffeur;
+    if (!chauffeurId) return;
+
+    try {
+      setVehicleLoading(true);
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL;
+      const response = await axios.get(`${baseUrl}/api/Chauffeur/GetVehicle/${chauffeurId}`, {
+        headers: { "Authorization": `Bearer ${user?.token}` }
+      });
+
+      if (response.data.success && response.data.hasVehicle) {
+        setAssignedVehicle(response.data.vehicle);
+        // On initialise editVehicle avec toutes les données reçues
+        setEditVehicle({
+          ...editVehicle, // defaults
+          ...response.data.vehicle // server data
+        });
+      }
+    } catch (error) {
+      console.error("Erreur chargement véhicule:", error);
+    } finally {
+      setVehicleLoading(false);
+    }
   };
+
+  const saveVehicle = async () => {
+    const chauffeurId = user?.userData?.idChauffeur;
+    if (!chauffeurId) return;
+
+    try {
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL;
+      console.log("Saving vehicle data:", editVehicle);
+      const response = await axios.post(
+        `${baseUrl}/api/Chauffeur/UpdateVehicle/${chauffeurId}`,
+        editVehicle,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${user?.token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        setAssignedVehicle(response.data.vehicle);
+        setVehicleModalVisible(false);
+        Alert.alert("Succès", "Véhicule mis à jour avec succès");
+      }
+    } catch (error) {
+      console.error("Erreur sauvegarde véhicule:", error);
+      Alert.alert("Erreur", "Impossible de sauvegarder les informations du véhicule");
+    }
+  };
+
+  const pickImage = async () => {
+    // Demander la permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission refusée', 'Nous avons besoin de votre permission pour accéder à vos photos.');
+      return;
+    }
+
+    // Choisir l'image
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.7,
+      base64: true,
+    });
+
+    if (!result.canceled) {
+      const selectedImage = result.assets[0];
+      setEditVehicle({
+        ...editVehicle,
+        imageBase64: `data:image/jpeg;base64,${selectedImage.base64}`
+      });
+    }
+  };
+
+  // Véhicule assigné - OBSOLÈTE car géré par state assignedVehicle
+  const vehicleData = assignedVehicle ? {
+    model: `${assignedVehicle.marque} ${assignedVehicle.modele}`,
+    plateNumber: assignedVehicle.immatriculation,
+    year: assignedVehicle.annee?.toString() || "N/A",
+    color: assignedVehicle.couleur || "N/A",
+    capacity: `${assignedVehicle.capacite} kg`,
+    fuelType: assignedVehicle.typeEnergie || "N/A",
+    lastService: "N/A", // À ajouter au backend plus tard si besoin
+    nextService: "N/A",
+    insuranceExpiry: assignedVehicle.dateAssuranceExpire ? new Date(assignedVehicle.dateAssuranceExpire).toLocaleDateString() : "N/A",
+  } : null;
 
   // Options du menu
   const menuOptions = [
@@ -293,7 +399,7 @@ const ChauffeurProfile = ({ user, navigation }) => {
   };
 
   const handleVehicleDetails = () => {
-    navigation.navigate("VehicleDetails", { vehicle: vehicleData });
+    setVehicleModalVisible(true);
   };
 
   const handleDocuments = () => {
@@ -318,16 +424,16 @@ const ChauffeurProfile = ({ user, navigation }) => {
               {editingField === "nom"
                 ? "le nom"
                 : editingField === "prenom"
-                ? "le prénom"
-                : editingField === "phone"
-                ? "le téléphone"
-                : editingField === "address"
-                ? "l'adresse"
-                : editingField === "ville"
-                ? "la ville"
-                : editingField === "licenseNumber"
-                ? "le n° de permis"
-                : "l'information"}
+                  ? "le prénom"
+                  : editingField === "phone"
+                    ? "le téléphone"
+                    : editingField === "address"
+                      ? "l'adresse"
+                      : editingField === "ville"
+                        ? "la ville"
+                        : editingField === "licenseNumber"
+                          ? "le n° de permis"
+                          : "l'information"}
             </Text>
             <TextInput
               style={styles.modalInput}
@@ -339,8 +445,8 @@ const ChauffeurProfile = ({ user, navigation }) => {
                 editingField === "email"
                   ? "email-address"
                   : editingField === "phone"
-                  ? "phone-pad"
-                  : "default"
+                    ? "phone-pad"
+                    : "default"
               }
             />
             <View style={styles.modalButtons}>
@@ -364,6 +470,197 @@ const ChauffeurProfile = ({ user, navigation }) => {
           </View>
         </View>
       </Modal>
+
+      {/* Modal Véhicule */}
+      <Modal
+        visible={vehicleModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setVehicleModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { height: '80%' }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Informations Véhicule</Text>
+              <TouchableOpacity onPress={() => setVehicleModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.inputRow}>
+                <View style={[styles.inputGroup, { flex: 2, marginRight: 10 }]}>
+                  <Text style={styles.inputLabel}>Type (ex: Camion, Utilitaire)</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={editVehicle.type}
+                    onChangeText={(val) => setEditVehicle({ ...editVehicle, type: val })}
+                    placeholder="Type"
+                  />
+                </View>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.inputLabel}>Année</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={editVehicle.annee?.toString()}
+                    keyboardType="numeric"
+                    onChangeText={(val) => setEditVehicle({ ...editVehicle, annee: parseInt(val) || 0 })}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Marque</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={editVehicle.marque}
+                  onChangeText={(val) => setEditVehicle({ ...editVehicle, marque: val })}
+                  placeholder="Marque (ex: Honda)"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Modèle</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={editVehicle.modele}
+                  onChangeText={(val) => setEditVehicle({ ...editVehicle, modele: val })}
+                  placeholder="Modèle"
+                />
+              </View>
+
+              <View style={styles.inputRow}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
+                  <Text style={styles.inputLabel}>Immatriculation</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={editVehicle.immatriculation}
+                    onChangeText={(val) => setEditVehicle({ ...editVehicle, immatriculation: val })}
+                    placeholder="Plaque"
+                  />
+                </View>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.inputLabel}>Couleur</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={editVehicle.couleur}
+                    onChangeText={(val) => setEditVehicle({ ...editVehicle, couleur: val })}
+                    placeholder="Couleur"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Image du véhicule</Text>
+                <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
+                  {editVehicle.imageBase64 || editVehicle.imageUrl ? (
+                    <Image
+                      source={{ uri: editVehicle.imageBase64 || editVehicle.imageUrl }}
+                      style={styles.selectedImage}
+                    />
+                  ) : (
+                    <View style={styles.imagePlaceholder}>
+                      <Ionicons name="camera" size={32} color="#999" />
+                      <Text style={styles.imagePlaceholderText}>Choisir une photo</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </View>
+
+
+              {/* <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Lien de l'image (URL - Optionnel)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={editVehicle.imageUrl}
+                  onChangeText={(val) => setEditVehicle({ ...editVehicle, imageUrl: val })}
+                  placeholder="https://..."
+                />
+              </View> */}
+
+              <View style={styles.inputRow}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
+                  <Text style={styles.inputLabel}>Capacité (kg)</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={editVehicle.capacite?.toString()}
+                    keyboardType="numeric"
+                    onChangeText={(val) => setEditVehicle({ ...editVehicle, capacite: parseFloat(val) || 0 })}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Énergie</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={editVehicle.typeEnergie}
+                  onChangeText={(val) => setEditVehicle({ ...editVehicle, typeEnergie: val })}
+                  placeholder="Essence, Électrique, etc."
+                />
+              </View>
+
+              <View style={styles.inputRow}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
+                  <Text style={styles.inputLabel}>Consommation</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={editVehicle.consommationMoyenne?.toString()}
+                    keyboardType="numeric"
+                    onChangeText={(val) => setEditVehicle({ ...editVehicle, consommationMoyenne: parseFloat(val) || 0 })}
+                    placeholder="L/100km"
+                  />
+                </View>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.inputLabel}>Autonomie (km)</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={editVehicle.autonomie?.toString()}
+                    keyboardType="numeric"
+                    onChangeText={(val) => setEditVehicle({ ...editVehicle, autonomie: parseFloat(val) || 0 })}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Numéro de châssis</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={editVehicle.numeroChassis}
+                  onChangeText={(val) => setEditVehicle({ ...editVehicle, numeroChassis: val })}
+                  placeholder="VIN / N° de série"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Observations</Text>
+                <TextInput
+                  style={[styles.modalInput, { height: 80, textAlignVertical: 'top' }]}
+                  value={editVehicle.observations}
+                  onChangeText={(val) => setEditVehicle({ ...editVehicle, observations: val })}
+                  placeholder="Notes complémentaires..."
+                  multiline={true}
+                />
+              </View>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setVehicleModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Annuler</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.saveButton]}
+                  onPress={saveVehicle}
+                >
+                  <Text style={styles.saveButtonText}>Enregistrer</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal >
 
       <ScrollView
         style={styles.scrollView}
@@ -430,34 +727,45 @@ const ChauffeurProfile = ({ user, navigation }) => {
         {/* Véhicule assigné */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Véhicule assigné</Text>
-          <TouchableOpacity
-            style={styles.vehicleCard}
-            onPress={handleVehicleDetails}
-          >
-            <View style={styles.vehicleHeader}>
-              <MaterialCommunityIcons name="car" size={28} color="#da1b22ff" />
-              <View style={styles.vehicleInfo}>
-                <Text style={styles.vehicleModel}>{vehicleData.model}</Text>
-                <Text style={styles.vehiclePlate}>{vehicleData.plateNumber}</Text>
+          {assignedVehicle ? (
+            <TouchableOpacity
+              style={styles.vehicleCard}
+              onPress={handleVehicleDetails}
+            >
+              <View style={styles.vehicleHeader}>
+                <MaterialCommunityIcons name="car" size={28} color="#da1b22ff" />
+                <View style={styles.vehicleInfo}>
+                  <Text style={styles.vehicleModel}>{vehicleData.model}</Text>
+                  <Text style={styles.vehiclePlate}>{vehicleData.plateNumber}</Text>
+                </View>
+                <MaterialIcons name="chevron-right" size={24} color="#ccc" />
               </View>
-              <MaterialIcons name="chevron-right" size={24} color="#ccc" />
-            </View>
 
-            <View style={styles.vehicleDetails}>
-              <View style={styles.vehicleDetail}>
-                <Text style={styles.detailLabel}>Année</Text>
-                <Text style={styles.detailValue}>{vehicleData.year}</Text>
+              <View style={styles.vehicleDetails}>
+                <View style={styles.vehicleDetail}>
+                  <Text style={styles.detailLabel}>Année</Text>
+                  <Text style={styles.detailValue}>{vehicleData.year}</Text>
+                </View>
+                <View style={styles.vehicleDetail}>
+                  <Text style={styles.detailLabel}>Type</Text>
+                  <Text style={styles.detailValue}>{vehicleData.fuelType}</Text>
+                </View>
+                <View style={styles.vehicleDetail}>
+                  <Text style={styles.detailLabel}>Capa.</Text>
+                  <Text style={styles.detailValue}>{vehicleData.capacity}</Text>
+                </View>
               </View>
-              <View style={styles.vehicleDetail}>
-                <Text style={styles.detailLabel}>Type</Text>
-                <Text style={styles.detailValue}>{vehicleData.fuelType}</Text>
-              </View>
-              <View style={styles.vehicleDetail}>
-                <Text style={styles.detailLabel}>Prochain entretien</Text>
-                <Text style={styles.detailValue}>{vehicleData.nextService}</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.emptyVehicleCard}
+              onPress={handleVehicleDetails}
+            >
+              <MaterialCommunityIcons name="car-outline" size={40} color="#ccc" />
+              <Text style={styles.emptyVehicleText}>Aucun véhicule assigné</Text>
+              <Text style={styles.addVehicleLink}>Ajouter mon véhicule</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Informations personnelles */}
@@ -705,7 +1013,7 @@ const ChauffeurProfile = ({ user, navigation }) => {
           </Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 };
 
@@ -1147,6 +1455,74 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#fff",
+  },
+  imagePickerButton: {
+    width: '100%',
+    height: 180,
+    borderRadius: 12,
+    backgroundColor: '#f8f9fa',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+    marginBottom: 5,
+  },
+  selectedImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  imagePlaceholder: {
+    alignItems: 'center',
+  },
+  imagePlaceholderText: {
+    marginTop: 8,
+    color: '#999',
+    fontSize: 14,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  inputGroup: {
+    marginBottom: 15,
+  },
+  inputRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 5,
+    fontWeight: "500",
+  },
+  emptyVehicleCard: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 30,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#f0f0f0",
+    borderStyle: "dashed",
+  },
+  emptyVehicleText: {
+    fontSize: 16,
+    color: "#999",
+    marginTop: 10,
+  },
+  addVehicleLink: {
+    fontSize: 14,
+    color: "#E31E24",
+    fontWeight: "bold",
+    marginTop: 5,
   },
 });
 

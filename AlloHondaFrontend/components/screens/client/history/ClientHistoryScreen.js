@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -15,131 +15,75 @@ import {
   MaterialCommunityIcons,
   FontAwesome5,
 } from "@expo/vector-icons";
+import axios from "axios";
+import { RefreshControl, ActivityIndicator, Alert } from "react-native";
 
-const ClientHistoryScreen = () => {
+const ClientHistoryScreen = ({ user }) => {
   const [filter, setFilter] = useState("all");
   const [selectedShipment, setSelectedShipment] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [shipmentsHistory, setShipmentsHistory] = useState([]);
 
-  // Données d'historique
-  const shipmentsHistory = [
-    {
-      id: "HONDA-2024-0456",
-      date: "15 Avril 2024",
-      type: "Express 24h",
-      from: "Paris CDG",
-      to: "Lyon Part-Dieu",
-      status: "livré",
-      weight: "28 kg",
-      items: 2,
-      cost: "145€",
-      driver: "Jean Renault",
-      vehicle: "Honda Prologue électrique",
-      rating: 5,
-      timeline: [
-        { time: "09:00", status: "Prise en charge", location: "Paris CDG" },
-        { time: "11:30", status: "En transit", location: "A6" },
-        { time: "15:45", status: "Arrivé au centre", location: "Lyon" },
-        { time: "16:20", status: "Livré", location: "Part-Dieu" },
-      ],
-    },
-    {
-      id: "HONDA-2024-0455",
-      date: "12 Avril 2024",
-      type: "Standard",
-      from: "Paris",
-      to: "Bordeaux",
-      status: "livré",
-      weight: "42 kg",
-      items: 3,
-      cost: "120€",
-      driver: "Marie Dubois",
-      vehicle: "Honda CR-V Hybrid",
-      rating: 4,
-      timeline: [
-        { time: "08:30", status: "Prise en charge", location: "Paris" },
-        { time: "14:15", status: "En transit", location: "A10" },
-        { time: "18:30", status: "Livré", location: "Bordeaux Centre" },
-      ],
-    },
-    {
-      id: "HONDA-2024-0454",
-      date: "10 Avril 2024",
-      type: "Express 24h",
-      from: "Lyon",
-      to: "Nice",
-      status: "livré",
-      weight: "15 kg",
-      items: 1,
-      cost: "95€",
-      driver: "Thomas Martin",
-      vehicle: "Honda Civic e:HEV",
-      rating: 5,
-      timeline: [
-        { time: "10:00", status: "Prise en charge", location: "Lyon" },
-        { time: "15:45", status: "Livré", location: "Nice" },
-      ],
-    },
-    {
-      id: "HONDA-2024-0453",
-      date: "5 Avril 2024",
-      type: "International",
-      from: "Paris",
-      to: "Genève",
-      status: "livré",
-      weight: "35 kg",
-      items: 2,
-      cost: "210€",
-      driver: "Pierre Lambert",
-      vehicle: "Honda HR-V",
-      rating: 5,
-      timeline: [
-        { time: "07:45", status: "Prise en charge", location: "Paris" },
-        { time: "12:30", status: "Douane", location: "Frontière" },
-        { time: "14:15", status: "Livré", location: "Genève" },
-      ],
-    },
-    {
-      id: "HONDA-2024-0452",
-      date: "2 Avril 2024",
-      type: "Standard",
-      from: "Marseille",
-      to: "Toulouse",
-      status: "livré",
-      weight: "50 kg",
-      items: 4,
-      cost: "135€",
-      driver: "Sophie Laurent",
-      vehicle: "Honda CR-V Hybrid",
-      rating: 4,
-      timeline: [
-        { time: "09:15", status: "Prise en charge", location: "Marseille" },
-        { time: "16:45", status: "Livré", location: "Toulouse" },
-      ],
-    },
-    {
-      id: "HONDA-2024-0451",
-      date: "28 Mars 2024",
-      type: "Fragile",
-      from: "Lille",
-      to: "Strasbourg",
-      status: "livré",
-      weight: "18 kg",
-      items: 1,
-      cost: "165€",
-      driver: "Paul Bernard",
-      vehicle: "Honda Prologue électrique",
-      rating: 5,
-      timeline: [
-        { time: "08:00", status: "Prise en charge", location: "Lille" },
-        { time: "13:30", status: "En transit", location: "A26" },
-        { time: "17:45", status: "Livré", location: "Strasbourg" },
-      ],
-    },
-  ];
+  const Api_Base = process.env.EXPO_PUBLIC_API_URL;
+  const clientId = user?.clientId || user?.ClientId || user?.userdata?.idClient || user?.userData?.idClient;
+  const token = user?.token || user?.Token;
+
+  useEffect(() => {
+    fetchHistory();
+  }, [clientId]);
+
+  const fetchHistory = async (showLoading = true) => {
+    if (!clientId) return;
+
+    try {
+      if (showLoading) setLoading(true);
+      const url = `${Api_Base}/api/DemandeTransports/client/${clientId}`;
+      const response = await axios.get(url, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (response.data.success) {
+        // Filter for completed demands
+        const history = response.data.demandes
+          .filter(d => d.statut === 'TERMINEE')
+          .map(d => ({
+            id: `HONDA-${new Date(d.dateDepart).getFullYear()}-${d.idDemande.toString().padStart(4, '0')}`,
+            dbId: d.idDemande,
+            date: new Date(d.dateDepart).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+            type: d.typeMarchandise,
+            from: d.depart,
+            to: d.arrivee,
+            status: 'livré',
+            weight: `${d.poids} kg`,
+            items: d.volume > 0 ? Math.max(1, Math.floor(d.volume * 2)) : 1,
+            cost: `${d.prixEstime}€`,
+            driver: d.chauffeur ? `${d.chauffeur.prenom} ${d.chauffeur.nom}` : "Non assigné",
+            vehicle: d.chauffeur?.vehicule?.type || "Non spécifié",
+            rating: 5, // Simulated for now
+            timeline: [
+              { time: d.heureDepart || "09:00", status: "Prise en charge", location: d.depart },
+              { time: "Livré", status: "Livré", location: d.arrivee },
+            ]
+          }));
+        setShipmentsHistory(history);
+      }
+    } catch (error) {
+      console.error("Erreur fetch history:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchHistory(false);
+  }, [clientId]);
 
   // Filtrer les données
-  const filteredShipments = filter === "all" 
-    ? shipmentsHistory 
+  const filteredShipments = filter === "all"
+    ? shipmentsHistory
     : shipmentsHistory.filter(shipment => shipment.type.toLowerCase().includes(filter));
 
   // Statistiques
@@ -247,8 +191,14 @@ const ClientHistoryScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#E31E24"]} />
+        }
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
@@ -314,7 +264,16 @@ const ClientHistoryScreen = () => {
         {/* Liste des envois */}
         <View style={styles.shipmentsList}>
           <Text style={styles.listTitle}>Envois récents</Text>
-          {filteredShipments.map(renderShipmentCard)}
+          {loading && !refreshing ? (
+            <ActivityIndicator size="large" color="#E31E24" style={{ marginTop: 20 }} />
+          ) : filteredShipments.length > 0 ? (
+            filteredShipments.map(renderShipmentCard)
+          ) : (
+            <View style={styles.emptyContainer}>
+              <MaterialCommunityIcons name="history" size={60} color="#ccc" />
+              <Text style={styles.emptyText}>Aucun historique pour le moment</Text>
+            </View>
+          )}
         </View>
 
         {/* Note sur les données */}
@@ -628,6 +587,16 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 18,
   },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 50,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#999",
+    marginTop: 10,
+  }
 });
 
 export default ClientHistoryScreen;

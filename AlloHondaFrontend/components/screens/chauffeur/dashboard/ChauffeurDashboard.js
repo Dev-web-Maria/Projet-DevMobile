@@ -234,12 +234,8 @@ const ChauffeurDashboard = ({ user, navigation }) => {
   };
 
   const startMission = (mission) => {
-    // Si la mission est en attente, on l'active (EN_COURS)
-    if (mission.status === "ACCEPTEE") {
-      updateMissionProgress(mission.id, 25);
-    } else {
-      Alert.alert("Action", "Navigation vers les détails de la mission...");
-    }
+    // Naviguer vers l'écran de suivi
+    navigation.navigate("ChauffeurTracking", { mission, user });
   };
 
   const updateMissionProgress = async (missionId, progress) => {

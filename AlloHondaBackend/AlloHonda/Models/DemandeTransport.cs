@@ -27,6 +27,9 @@ namespace AlloHonda.Models
         public string Instructions { get; set; }
         public string Statut { get; set; } = "EN_ATTENTE";
         public double PrixEstime { get; set; }
+        
+        public string? DepartCoord { get; set; } // Format "lat,lng"
+        public string? ArriveeCoord { get; set; } // Format "lat,lng"
 
         // Foreign key vers Client (int)
         [Required]

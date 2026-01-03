@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AlloHonda")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6e0f67cf65ba21e8424e80b961c62d13b50e26bc")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+821ff7a8c80a42406e6e470aa4ad5ce810c0d406")]
 [assembly: System.Reflection.AssemblyProductAttribute("AlloHonda")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AlloHonda")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

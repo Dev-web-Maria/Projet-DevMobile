@@ -8,31 +8,27 @@ namespace AlloHonda.Models
         [Key]
         public int IdVehicule { get; set; }
 
-        [Required]
         [StringLength(100)]
-        public string Type { get; set; } // Honda, Camion, Utilitaire, etc.
+        public string? Type { get; set; } // Honda, Camion, Utilitaire, etc.
 
-        [Required]
         [StringLength(100)]
-        public string Marque { get; set; } // Honda, Toyota, Renault, etc.
+        public string? Marque { get; set; } // Honda, Toyota, Renault, etc.
 
-        [Required]
         [StringLength(100)]
-        public string Modele { get; set; } // Civic, CR-V, Prologue, etc.
+        public string? Modele { get; set; } // Civic, CR-V, Prologue, etc.
 
         public double Capacite { get; set; } // en kg
 
-        [Required]
         [StringLength(20)]
-        public string Immatriculation { get; set; }
+        public string? Immatriculation { get; set; }
 
         public int? Annee { get; set; }
 
         [StringLength(50)]
-        public string Couleur { get; set; }
+        public string? Couleur { get; set; }
 
         [StringLength(50)]
-        public string TypeEnergie { get; set; } // Essence, Diesel, Électrique, Hybride
+        public string? TypeEnergie { get; set; } // Essence, Diesel, Électrique, Hybride
 
         [Column(TypeName = "decimal(10,2)")]
         public decimal? ConsommationMoyenne { get; set; } // L/100km ou kWh/100km
@@ -41,14 +37,14 @@ namespace AlloHonda.Models
         public decimal? Autonomie { get; set; } // en km
 
         [StringLength(255)]
-        public string ImageUrl { get; set; }
+        public string? ImageUrl { get; set; }
 
         // Pour stocker l'image en base64 (optionnel)
         [Column(TypeName = "text")]
-        public string ImageBase64 { get; set; }
+        public string? ImageBase64 { get; set; }
 
         [StringLength(20)]
-        public string Statut { get; set; } = "Actif"; // Actif, En maintenance, Hors service
+        public string? Statut { get; set; } = "Actif"; // Actif, En maintenance, Hors service
 
         public DateTime? DateAssuranceExpire { get; set; }
 
@@ -59,11 +55,11 @@ namespace AlloHonda.Models
         public int? Kilometrage { get; set; }
 
         [StringLength(50)]
-        public string NumeroChassis { get; set; }
+        public string? NumeroChassis { get; set; }
 
         // Informations complémentaires
         [StringLength(500)]
-        public string Observations { get; set; }
+        public string? Observations { get; set; }
 
         public DateTime DateCreation { get; set; } = DateTime.Now;
 

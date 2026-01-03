@@ -9,7 +9,7 @@ import {
     ActivityIndicator
 } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import axios from 'axios';
 
 const { width, height } = Dimensions.get('window');
@@ -20,10 +20,24 @@ const TrackingScreen = ({ route, navigation }) => {
     const [loading, setLoading] = useState(false);
     const Api_Base = process.env.EXPO_PUBLIC_API_URL;
 
+    // Parse coordinates from demande data
+    const startCoords = demande?.departCoord ? {
+        latitude: parseFloat(demande.departCoord.split(',')[0]),
+        longitude: parseFloat(demande.departCoord.split(',')[1])
+    } : null;
+
+    const endCoords = demande?.arriveeCoord ? {
+        latitude: parseFloat(demande.arriveeCoord.split(',')[0]),
+        longitude: parseFloat(demande.arriveeCoord.split(',')[1])
+    } : null;
+
     useEffect(() => {
+        // Initial fetch
+        fetchLatestChauffeurPosition();
+
         const refreshInterval = setInterval(() => {
             fetchLatestChauffeurPosition();
-        }, 15000); // 15 seconds
+        }, 8000); // 8 seconds for smoother tracking
 
         return () => clearInterval(refreshInterval);
     }, []);
@@ -35,12 +49,25 @@ const TrackingScreen = ({ route, navigation }) => {
             const url = `${Api_Base}/api/DemandeTransports/${demande.idDemande}`;
             const response = await axios.get(url);
             if (response.data.success && response.data.demande?.chauffeur) {
-                setCurrentChauffeur(response.data.demande.chauffeur);
+                const driver = response.data.demande.chauffeur;
+                setCurrentChauffeur(driver);
+
+                // If map not initialized or driver moved
+                if (!region) {
+                    setRegion({
+                        latitude: driver.latitude || startCoords?.latitude || 48.8566,
+                        longitude: driver.longitude || startCoords?.longitude || 2.3522,
+                        latitudeDelta: 0.05,
+                        longitudeDelta: 0.05,
+                    });
+                }
             }
         } catch (error) {
             console.error("Erreur fetch position chauffeur:", error);
         }
     };
+
+    const [region, setRegion] = useState(null);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -55,30 +82,63 @@ const TrackingScreen = ({ route, navigation }) => {
                 <View style={styles.placeholder} />
             </View>
 
-            <MapView
-                style={styles.map}
-                initialRegion={{
-                    latitude: currentChauffeur?.latitude || 48.8566,
-                    longitude: currentChauffeur?.longitude || 2.3522,
-                    latitudeDelta: 0.05,
-                    longitudeDelta: 0.05,
-                }}
-            >
-                {currentChauffeur?.latitude && (
-                    <Marker
-                        coordinate={{
-                            latitude: currentChauffeur.latitude,
-                            longitude: currentChauffeur.longitude,
-                        }}
-                        title="Votre chauffeur"
-                        description={currentChauffeur ? `${currentChauffeur.prenom} ${currentChauffeur.nom}` : ""}
-                    >
-                        <View style={styles.carMarker}>
-                            <MaterialCommunityIcons name="truck-fast" size={24} color="#fff" />
-                        </View>
-                    </Marker>
-                )}
-            </MapView>
+            {region && (
+                <MapView
+                    style={styles.map}
+                    region={region}
+                    onRegionChangeComplete={(r) => setRegion(r)}
+                >
+                    {/* Start Marker */}
+                    {startCoords && (
+                        <Marker
+                            coordinate={startCoords}
+                            title="Lieu de ramassage"
+                        >
+                            <MaterialIcons name="location-on" size={30} color="#4CAF50" />
+                        </Marker>
+                    )}
+
+                    {/* End Marker */}
+                    {endCoords && (
+                        <Marker
+                            coordinate={endCoords}
+                            title="Destination"
+                        >
+                            <MaterialIcons name="flag" size={34} color="#E31E24" />
+                        </Marker>
+                    )}
+
+                    {/* Chauffeur Marker */}
+                    {currentChauffeur?.latitude && (
+                        <Marker
+                            coordinate={{
+                                latitude: currentChauffeur.latitude,
+                                longitude: currentChauffeur.longitude,
+                            }}
+                            title="Votre chauffeur"
+                            description={currentChauffeur ? `${currentChauffeur.prenom} ${currentChauffeur.nom}` : ""}
+                        >
+                            <View style={styles.carMarker}>
+                                <MaterialCommunityIcons name="truck-fast" size={24} color="#fff" />
+                            </View>
+                        </Marker>
+                    )}
+
+                    {/* Trajectory */}
+                    {startCoords && endCoords && (
+                        <Polyline
+                            coordinates={[
+                                (currentChauffeur?.latitude ? { latitude: currentChauffeur.latitude, longitude: currentChauffeur.longitude } : startCoords),
+                                startCoords,
+                                endCoords
+                            ]}
+                            strokeWidth={4}
+                            strokeColor="#0056A6"
+                            lineDashPattern={[0]}
+                        />
+                    )}
+                </MapView>
+            )}
 
             <View style={styles.infoPanel}>
                 <View style={styles.driverInfo}>

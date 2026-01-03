@@ -2,6 +2,7 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import DriverTabNavigator from "./DriverTabNavigator";
+import ChauffeurTrackingScreen from "../screens/chauffeur/dashboard/ChauffeurTrackingScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -12,6 +13,11 @@ const DriverStackNavigator = ({ route }) => {
       <Stack.Screen
         name="DriverTabs"
         component={DriverTabNavigator}
+        initialParams={{ user }}
+      />
+      <Stack.Screen
+        name="ChauffeurTracking"
+        component={ChauffeurTrackingScreen}
         initialParams={{ user }}
       />
     </Stack.Navigator>

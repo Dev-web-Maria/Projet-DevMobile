@@ -306,12 +306,15 @@ namespace AlloHonda.Controllers
                         scheduledTime = d.HeureDepart,
                         dateDepart = d.DateDepart,
                         distance = d.Trajet != null ? d.Trajet.Distance + " km" : "N/A",
+                        duration = d.Trajet != null ? d.Trajet.DureeEstimee + " min" : "N/A",
                         items = d.Volume > 0 ? (int)Math.Max(1, d.Volume * 2) : 1, // Mock item count based on volume
                         weight = d.Poids + " kg",
                         customer = (d.Client != null && d.Client.ApplicationUser != null) ? $"{d.Client.ApplicationUser.Prenom} {d.Client.ApplicationUser.Nom}" : "Client Inconnu",
                         customerPhone = (d.Client != null && d.Client.ApplicationUser != null) ? d.Client.ApplicationUser.PhoneNumber : "",
                         payment = d.PrixEstime + "€",
-                        prixEstime = d.PrixEstime
+                        prixEstime = d.PrixEstime,
+                        departCoord = d.DepartCoord,
+                        arriveeCoord = d.ArriveeCoord
                     })
                     .OrderByDescending(m => m.idDemande)
                     .ToListAsync();
@@ -354,6 +357,140 @@ namespace AlloHonda.Controllers
             }
         }
 
+        // GET: api/Chauffeur/GetVehicle/5
+        [HttpGet]
+        [Route("api/Chauffeur/GetVehicle/{id}")]
+        public async Task<IActionResult> GetVehicle(int id)
+        {
+            try
+            {
+                var chauffeur = await _context.Chauffeur
+                    .Include(c => c.Vehicule)
+                    .FirstOrDefaultAsync(c => c.IdChauffeur == id);
+
+                if (chauffeur == null)
+                    return NotFound(new { success = false, message = "Chauffeur non trouvé" });
+
+                if (chauffeur.Vehicule == null)
+                    return Ok(new { success = true, hasVehicle = false });
+
+                return Ok(new
+                {
+                    success = true,
+                    hasVehicle = true,
+                    vehicle = new
+                    {
+                        chauffeur.Vehicule.IdVehicule,
+                        chauffeur.Vehicule.Type,
+                        chauffeur.Vehicule.Marque,
+                        chauffeur.Vehicule.Modele,
+                        chauffeur.Vehicule.Immatriculation,
+                        chauffeur.Vehicule.Capacite,
+                        chauffeur.Vehicule.Annee,
+                        chauffeur.Vehicule.Couleur,
+                        chauffeur.Vehicule.TypeEnergie,
+                        chauffeur.Vehicule.DateAssuranceExpire,
+                        chauffeur.Vehicule.Kilometrage
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, error = "Erreur récupération véhicule", details = ex.Message });
+            }
+        }
+
+        // POST: api/Chauffeur/UpdateVehicle/5
+        [HttpPost]
+        [Route("api/Chauffeur/UpdateVehicle/{id}")]
+        public async Task<IActionResult> UpdateVehicle(int id, [FromBody] VehiculeRequest request)
+        {
+            try
+            {
+                var chauffeur = await _context.Chauffeur
+                    .Include(c => c.Vehicule)
+                    .FirstOrDefaultAsync(c => c.IdChauffeur == id);
+
+                if (chauffeur == null)
+                    return NotFound(new { success = false, message = "Chauffeur non trouvé" });
+
+                var vehicule = chauffeur.Vehicule;
+
+                if (vehicule == null)
+                {
+                    vehicule = new Vehicule
+                    {
+                        ChauffeurId = id,
+                        DateCreation = DateTime.Now,
+                        Statut = "Actif"
+                    };
+                    _context.Vehicule.Add(vehicule);
+                    chauffeur.Vehicule = vehicule; // Lié explicitement
+                }
+
+                // Mapping complet de tous les champs envoyés par le frontend
+                vehicule.Type = request.Type;
+                vehicule.Marque = request.Marque;
+                vehicule.Modele = request.Modele;
+                vehicule.Immatriculation = request.Immatriculation;
+                vehicule.Capacite = request.Capacite;
+                vehicule.Annee = request.Annee;
+                vehicule.Couleur = request.Couleur;
+                vehicule.TypeEnergie = request.TypeEnergie;
+                
+                vehicule.ConsommationMoyenne = request.ConsommationMoyenne;
+                vehicule.Autonomie = request.Autonomie;
+                vehicule.ImageUrl = request.ImageUrl;
+                vehicule.ImageBase64 = request.ImageBase64;
+                
+                vehicule.DateAssuranceExpire = request.DateAssuranceExpire;
+                vehicule.DateDerniereRevision = request.DateDerniereRevision;
+                vehicule.DateProchaineRevision = request.DateProchaineRevision;
+                
+                vehicule.Kilometrage = request.Kilometrage;
+                vehicule.NumeroChassis = request.NumeroChassis;
+                vehicule.Observations = request.Observations;
+                
+                vehicule.DateModification = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Véhicule mis à jour avec succès",
+                    vehicle = new
+                    {
+                        vehicule.IdVehicule,
+                        vehicule.Type,
+                        vehicule.Marque,
+                        vehicule.Modele,
+                        vehicule.Immatriculation,
+                        vehicule.Capacite,
+                        vehicule.Annee,
+                        vehicule.Couleur,
+                        vehicule.TypeEnergie,
+                        vehicule.ConsommationMoyenne,
+                        vehicule.Autonomie,
+                        vehicule.DateAssuranceExpire,
+                        vehicule.Kilometrage,
+                        vehicule.NumeroChassis,
+                        vehicule.Observations
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                var innerMessage = ex.InnerException?.Message;
+                return StatusCode(500, new { 
+                    success = false, 
+                    error = "Erreur mise à jour véhicule", 
+                    details = ex.Message,
+                    inner = innerMessage
+                });
+            }
+        }
+
         // PUT: api/Chauffeur/UpdatePosition/5
         [HttpPut]
         [Route("api/Chauffeur/UpdatePosition/{id}")]
@@ -381,6 +518,28 @@ namespace AlloHonda.Controllers
         {
             public double Latitude { get; set; }
             public double Longitude { get; set; }
+        }
+
+        public class VehiculeRequest
+        {
+            public string? Type { get; set; }
+            public string? Marque { get; set; }
+            public string? Modele { get; set; }
+            public string? Immatriculation { get; set; }
+            public double Capacite { get; set; }
+            public int? Annee { get; set; }
+            public string? Couleur { get; set; }
+            public string? TypeEnergie { get; set; }
+            public decimal? ConsommationMoyenne { get; set; }
+            public decimal? Autonomie { get; set; }
+            public string? ImageUrl { get; set; }
+            public string? ImageBase64 { get; set; }
+            public DateTime? DateAssuranceExpire { get; set; }
+            public DateTime? DateDerniereRevision { get; set; }
+            public DateTime? DateProchaineRevision { get; set; }
+            public int? Kilometrage { get; set; }
+            public string? NumeroChassis { get; set; }
+            public string? Observations { get; set; }
         }
 
         public class UpdateProgressRequest

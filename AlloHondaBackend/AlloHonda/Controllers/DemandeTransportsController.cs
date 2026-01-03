@@ -44,6 +44,8 @@ namespace AlloHonda.Controllers
                     instructions = d.Instructions,
                     statut = d.Statut,
                     prixEstime = d.PrixEstime,
+                    departCoord = d.DepartCoord,
+                    arriveeCoord = d.ArriveeCoord,
                     clientId = d.ClientId,
                     chauffeurId = d.ChauffeurId,
                     client = d.Client != null ? new
@@ -107,6 +109,8 @@ namespace AlloHonda.Controllers
                 instructions = demandeTransport.Instructions,
                 statut = demandeTransport.Statut,
                 prixEstime = demandeTransport.PrixEstime,
+                departCoord = demandeTransport.DepartCoord,
+                arriveeCoord = demandeTransport.ArriveeCoord,
                 clientId = demandeTransport.ClientId,
                 chauffeurId = demandeTransport.ChauffeurId,
                 client = demandeTransport.Client != null ? new
@@ -151,6 +155,8 @@ namespace AlloHonda.Controllers
             public string Instructions { get; set; }
             public double PrixEstime { get; set; }
             public int ClientId { get; set; } 
+            public string? DepartCoord { get; set; }
+            public string? ArriveeCoord { get; set; }
         }
 
         [HttpPost]
@@ -189,6 +195,8 @@ namespace AlloHonda.Controllers
                     Instructions = request.Instructions ?? "",
                     Statut = "EN_ATTENTE",
                     PrixEstime = request.PrixEstime > 0 ? request.PrixEstime : CalculateEstimatedPrice(request),
+                    DepartCoord = request.DepartCoord,
+                    ArriveeCoord = request.ArriveeCoord,
                     ClientId = client.IdClient,
                     ChauffeurId = null
                 };
@@ -269,6 +277,8 @@ namespace AlloHonda.Controllers
                     instructions = d.Instructions,
                     statut = d.Statut,
                     prixEstime = d.PrixEstime,
+                    departCoord = d.DepartCoord,
+                    arriveeCoord = d.ArriveeCoord,
                     clientId = d.ClientId,
                     chauffeurId = d.ChauffeurId,
                     client = d.Client != null ? new
