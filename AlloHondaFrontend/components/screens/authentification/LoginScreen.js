@@ -71,6 +71,7 @@ export default function LoginScreen({ navigation }) {
         signal: controller.signal,
         headers: {
           'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
         }
       });
 
@@ -131,6 +132,7 @@ export default function LoginScreen({ navigation }) {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
         },
         body: JSON.stringify(loginData),
         signal: controller.signal,

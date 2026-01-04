@@ -225,7 +225,8 @@ const NouvelleDemandeScreen = ({ navigation, route }) => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": token ? `Bearer ${token}` : ""
+            "Authorization": token ? `Bearer ${token}` : "",
+            "ngrok-skip-browser-warning": "true"
           },
           body: JSON.stringify(payload)
         }
@@ -264,7 +265,7 @@ const NouvelleDemandeScreen = ({ navigation, route }) => {
         [
           {
             text: "OK",
-            onPress: () => navigation.navigate("Dashboard", { user: { ...user, token } })
+            onPress: () => navigation.navigate("ClientTabs", { screen: "Dashboard", params: { user: { ...user, token } } })
           }
         ]
       );
@@ -277,7 +278,7 @@ const NouvelleDemandeScreen = ({ navigation, route }) => {
     }
   };
 
-  
+
   // Utiliser l'effet pour calculer le prix
   useEffect(() => {
     calculatePrice();

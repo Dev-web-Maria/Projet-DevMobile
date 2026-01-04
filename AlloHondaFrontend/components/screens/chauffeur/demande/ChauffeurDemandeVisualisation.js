@@ -45,7 +45,8 @@ const ChauffeurDemandeVisualisation = ({ user, navigation }) => {
       const url = `${Api_Base}/api/DemandeTransports`;
       const response = await fetch(url, {
         headers: {
-          "Authorization": `Bearer ${token}`
+          "Authorization": `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "true"
         }
       });
       const data = await response.json();
@@ -70,7 +71,8 @@ const ChauffeurDemandeVisualisation = ({ user, navigation }) => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          "Authorization": `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "true"
         },
         body: JSON.stringify({
           statut: "ACCEPTEE",

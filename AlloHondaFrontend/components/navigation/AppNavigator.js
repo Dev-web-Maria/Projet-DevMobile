@@ -8,6 +8,7 @@ import { ActivityIndicator, View } from "react-native";
 import LandingScreen from "../screens/authentification/LandingScreen";
 import LoginScreen from "../screens/authentification/LoginScreen";
 import RegisterScreen from "../screens/authentification/RegisterScreen";
+import AdminLoginScreen from "../screens/authentification/AdminLoginScreen";
 
 /* APP NAVIGATORS */
 import ClientStackNavigator from "./ClientStackNavigator";
@@ -49,9 +50,9 @@ const AppNavigator = () => {
 
   const getInitialRoute = () => {
     if (!user) return "Landing";
-    
+
     const type = user.userType || user.UserType || (user.roles && user.roles[0]) || "client";
-    
+
     if (type.toLowerCase() === 'chauffeur' || type.toLowerCase() === 'driver') {
       return "Driver";
     } else if (type.toLowerCase() === 'admin') {
@@ -61,7 +62,7 @@ const AppNavigator = () => {
   };
 
   return (
-    <Stack.Navigator 
+    <Stack.Navigator
       initialRouteName={getInitialRoute()}
       screenOptions={{ headerShown: false }}
     >
@@ -69,18 +70,19 @@ const AppNavigator = () => {
       <Stack.Screen name="Landing" component={LandingScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
-      <Stack.Screen 
-        name="Client" 
+      <Stack.Screen name="AdminLogin" component={AdminLoginScreen} />
+      <Stack.Screen
+        name="Client"
         component={ClientStackNavigator}
         initialParams={{ user }}
       />
-      <Stack.Screen 
-        name="Driver" 
+      <Stack.Screen
+        name="Driver"
         component={DriverStackNavigator}
         initialParams={{ user }}
       />
-      <Stack.Screen 
-        name="Admin" 
+      <Stack.Screen
+        name="Admin"
         component={AdminNavigator}
         initialParams={{ user }}
       />

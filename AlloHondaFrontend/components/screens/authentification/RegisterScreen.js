@@ -164,6 +164,7 @@ export default function RegisterScreen({ navigation }) {
         signal: controller.signal,
         headers: {
           'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
         }
       });
 
@@ -261,6 +262,7 @@ d'accéder à localhost depuis votre iPhone.`,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
         },
         body: JSON.stringify(userData),
         signal: controller.signal,
