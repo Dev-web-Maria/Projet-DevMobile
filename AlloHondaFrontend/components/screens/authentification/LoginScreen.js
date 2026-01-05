@@ -22,6 +22,11 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('Non testé');
 
+  React.useEffect(() => {
+    // Test de connexion silencieux en arrière-plan au chargement
+    testServerConnection();
+  }, []);
+
   // ✅ URL DYNAMIQUE selon le périphérique
   const getApiBaseUrl = () => {
     return process.env.EXPO_PUBLIC_API_URL;
@@ -238,7 +243,8 @@ Si l'API ne répond pas:
             <Text style={styles.title}>ALLOHONDA</Text>
             <Text style={styles.subtitle}>Connectez-vous à votre compte</Text>
 
-            Indicateur de connexion
+            {/* Indicateur de connexion caché car non nécessaire en production */}
+            {/* 
             <TouchableOpacity
               style={styles.connectionStatus}
               onPress={showConnectionHelp}
@@ -264,6 +270,7 @@ Si l'API ne répond pas:
               </View>
               <Text style={styles.helpText}>Touchez pour info</Text>
             </TouchableOpacity>
+            */}
           </View>
 
           {/* Formulaire */}
@@ -313,7 +320,8 @@ Si l'API ne répond pas:
               <Text style={styles.forgotPasswordText}>Mot de passe oublié ?</Text>
             </TouchableOpacity>
 
-            {/* Bouton TEST API */}
+            {/* Bouton TEST API caché */}
+            {/* 
             <TouchableOpacity
               style={styles.testButton}
               onPress={async () => {
@@ -334,6 +342,7 @@ Si l'API ne répond pas:
                 <Text style={styles.testButtonText}>Tester la connexion API</Text>
               </View>
             </TouchableOpacity>
+            */}
 
             {/* Bouton de connexion */}
             <TouchableOpacity
@@ -366,6 +375,16 @@ Si l'API ne répond pas:
                 <Text style={styles.registerLink}>S'inscrire</Text>
               </TouchableOpacity>
             </View>
+            <View>
+              {/* SUPPORT / ADMIN */}
+              <TouchableOpacity
+                style={styles.adminLinkContainer}
+                onPress={() => navigation.navigate('AdminLogin')}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.adminLinkText}>Support / Admin</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -384,7 +403,8 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingVertical: 40,
+    justifyContent: 'center',
   },
   header: {
     alignItems: 'center',
@@ -549,5 +569,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1A56DB',
     fontWeight: '600',
+  },
+    adminLinkContainer: { 
+      marginTop: 8 ,
+      display: 'center',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    adminLinkText: {  
+    fontSize: 10,
+    color: '#1A56DB',
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
 });

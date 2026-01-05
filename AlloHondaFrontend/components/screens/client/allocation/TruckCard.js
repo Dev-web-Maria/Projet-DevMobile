@@ -8,25 +8,25 @@ const TruckCard = ({ truck, onAllocate }) => {
   const getStatus = () => {
     switch (truck.status) {
       case "Disponible":
-        return { 
-          label: "DISPONIBLE", 
-          color: "#10B981", 
-          bg: "rgba(16, 185, 129, 0.1)", 
-          icon: "checkmark-circle" 
+        return {
+          label: "DISPONIBLE",
+          color: "#10B981",
+          bg: "rgba(16, 185, 129, 0.1)",
+          icon: "checkmark-circle"
         };
       case "Occupe":
-        return { 
-          label: "OCCUPÉ", 
-          color: "#F59E0B", 
-          bg: "rgba(245, 158, 11, 0.1)", 
-          icon: "time" 
+        return {
+          label: "OCCUPÉ",
+          color: "#F59E0B",
+          bg: "rgba(245, 158, 11, 0.1)",
+          icon: "time"
         };
       default:
-        return { 
-          label: truck.status || "", 
-          color: "#6B7280", 
-          bg: "rgba(156, 163, 175, 0.1)", 
-          icon: "help" 
+        return {
+          label: truck.status || "",
+          color: "#6B7280",
+          bg: "rgba(156, 163, 175, 0.1)",
+          icon: "help"
         };
     }
   };
@@ -54,7 +54,7 @@ const TruckCard = ({ truck, onAllocate }) => {
       <View style={styles.imageContainer}>
         <Image
           source={{
-            uri: truck.image || "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&auto=format&fit=crop",
+            uri: truck.image || "https://www.caroom.fr/guide/wp-content/uploads/2022/05/utilitaire.jpg",
           }}
           style={styles.image}
         />

@@ -53,7 +53,8 @@ namespace AlloHonda.Controllers
                             c.Vehicule.Immatriculation,
                             c.Vehicule.Capacite,
                             c.Vehicule.Annee,
-                            c.Vehicule.Couleur
+                            c.Vehicule.Couleur,
+                            c.Vehicule.ImageBase64
                         } : null
                     })
                     .OrderBy(c => c.Statut == "Disponible" ? 0 : 1) // Dispos d'abord
@@ -71,6 +72,41 @@ namespace AlloHonda.Controllers
                     details = ex.Message,
                     stackTrace = ex.StackTrace
                 });
+            }
+        }
+
+        // GET: api/Chauffeur/All
+        [HttpGet]
+        [Route("api/Chauffeur/All")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetAll()
+        {
+            try
+            {
+                var chauffeurs = await _context.Chauffeur
+                    .Include(c => c.ApplicationUser)
+                    .Include(c => c.Vehicule)
+                    .Select(c => new
+                    {
+                        c.IdChauffeur,
+                        Nom = c.ApplicationUser.Nom,
+                        Prenom = c.ApplicationUser.Prenom,
+                        Email = c.ApplicationUser.Email,
+                        Telephone = c.ApplicationUser.PhoneNumber ?? c.ApplicationUser.Telephone,
+                        c.Statut,
+                        Vehicule = c.Vehicule != null ? new
+                        {
+                            c.Vehicule.Marque,
+                            c.Vehicule.Modele
+                        } : null
+                    })
+                    .ToListAsync();
+
+                return Ok(chauffeurs);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Erreur lors de la récupération des chauffeurs", details = ex.Message });
             }
         }
         //public async Task<IActionResult> GetAvailable()
@@ -126,8 +162,48 @@ namespace AlloHonda.Controllers
                 return StatusCode(500, new { success = false, error = "Erreur lors de la mise à jour du statut", details = ex.Message });
             }
         }
+        
+        // DELETE: api/Chauffeur/5
+        [HttpDelete]
+        [Route("api/Chauffeur/{id}")]
+        public async Task<IActionResult> DeleteChauffeur(int id)
+        {
+            try
+            {
+                var chauffeur = await _context.Chauffeur
+                    .Include(c => c.ApplicationUser)
+                    .Include(c => c.Vehicule)
+                    .FirstOrDefaultAsync(c => c.IdChauffeur == id);
 
-        // PUT: api/Chauffeur/UpdateProfile/5
+                if (chauffeur == null)
+                    return NotFound(new { success = false, message = "Chauffeur non trouvé" });
+
+                // Supprimer les entités liées si nécessaire (Vehicule, etc.)
+                if (chauffeur.Vehicule != null)
+                {
+                    _context.Vehicule.Remove(chauffeur.Vehicule);
+                }
+
+                var user = chauffeur.ApplicationUser;
+                
+                // Supprimer le chauffeur
+                _context.Chauffeur.Remove(chauffeur);
+                
+                // Supprimer l'utilisateur Identity
+                if (user != null)
+                {
+                    await _userManager.DeleteAsync(user);
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Chauffeur supprimé avec succès" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, error = "Erreur lors de la suppression du chauffeur", details = ex.Message });
+            }
+        }
         [HttpPut]
         [Route("api/Chauffeur/UpdateProfile/{id}")]
         public async Task<IActionResult> UpdateProfile(int id, [FromBody] UpdateChauffeurProfileRequest request)
@@ -235,7 +311,7 @@ namespace AlloHonda.Controllers
                     var chauffeur = new Chauffeur
                     {
                         ApplicationUserId = user.Id,
-                        Statut = "Disponible" // Statut par défaut
+                        Statut = request.Statut ?? "En attente" // Si fourni (par admin), on l'utilise, sinon "En attente"
                     };
 
                     _context.Chauffeur.Add(chauffeur);
@@ -319,7 +395,8 @@ namespace AlloHonda.Controllers
                     .OrderByDescending(m => m.idDemande)
                     .ToListAsync();
 
-                return Ok(new { success = true, missions });
+                var chauffeur = await _context.Chauffeur.FindAsync(id);
+                return Ok(new { success = true, missions, statut = chauffeur?.Statut });
             }
             catch (Exception ex)
             {
@@ -514,6 +591,40 @@ namespace AlloHonda.Controllers
             }
         }
 
+        [HttpGet]
+        [Route("api/Chauffeur/GetStats/{id}")]
+        public async Task<IActionResult> GetStats(int id)
+        {
+            try
+            {
+                var missions = await _context.DemandeTransport
+                    .Include(d => d.Trajet)
+                    .Where(d => d.ChauffeurId == id)
+                    .ToListAsync();
+
+                var finishedMissions = missions.Where(m => m.Statut == "TERMINEE").ToList();
+                var today = DateTime.Today;
+                var todayMissions = finishedMissions.Where(m => m.DateDepart.Date == today).ToList();
+
+                var stats = new
+                {
+                    totalMissions = finishedMissions.Count,
+                    totalEarnings = finishedMissions.Sum(m => m.PrixEstime),
+                    totalHours = finishedMissions.Where(m => m.Trajet != null).Sum(m => m.Trajet.DureeEstimee) / 60.0, // en heures
+                    todayMissions = todayMissions.Count,
+                    todayEarnings = todayMissions.Sum(m => m.PrixEstime),
+                    todayDistance = todayMissions.Where(m => m.Trajet != null).Sum(m => m.Trajet.Distance),
+                    rating = 4.8 // Mock rating for now
+                };
+
+                return Ok(new { success = true, stats });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, error = "Erreur récupération stats", details = ex.Message });
+            }
+        }
+
         public class UpdatePositionRequest
         {
             public double Latitude { get; set; }
@@ -559,6 +670,7 @@ namespace AlloHonda.Controllers
         public string Adresse { get; set; }
         public string Ville { get; set; }
         public DateTime DateNaissance { get; set; }
+        public string? Statut { get; set; }
     }
 
     public class UpdateChauffeurProfileRequest

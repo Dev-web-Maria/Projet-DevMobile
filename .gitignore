@@ -1,0 +1,18 @@
+# ===== Visual Studio =====
+.vs/
+
+# ===== .NET =====
+**/bin/
+**/obj/
+
+# ===== Environnement =====
+.env
+
+# ===== Logs / cache =====
+*.cache
+*.bin
+*.pdb
+
+# ===== OS =====
+.DS_Store
+Thumbs.db

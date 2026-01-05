@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { 
-  View, 
-  FlatList, 
-  StyleSheet, 
-  TouchableOpacity, 
+import {
+  View,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
   Text,
   ActivityIndicator,
   RefreshControl,
-  Alert 
+  Alert
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -43,7 +43,7 @@ const AllocationScreen = ({ user }) => {
         driverPhone: item.telephone,
         license: item.numeroPermis,
         fuel: "Inconnu",
-        image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&auto=format&fit=crop",
+        image: item.vehicule?.imageBase64 || "https://www.caroom.fr/guide/wp-content/uploads/2022/05/utilitaire.jpg",
         rawData: item
       }));
 
@@ -87,10 +87,10 @@ const AllocationScreen = ({ user }) => {
   }, [filter, search, trucks]);
 
   const handleAllocate = (truck) => {
-    navigation.navigate("NouvelleDemande", { 
-      truck, 
+    navigation.navigate("NouvelleDemande", {
+      truck,
       user,
-      chauffeurData: truck.rawData 
+      chauffeurData: truck.rawData
     });
   };
 
@@ -120,9 +120,9 @@ const AllocationScreen = ({ user }) => {
           data={filteredTrucks}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
-            <TruckCard 
-              truck={item} 
-              onAllocate={handleAllocate} 
+            <TruckCard
+              truck={item}
+              onAllocate={handleAllocate}
               user={user}
             />
           )}
@@ -136,8 +136,8 @@ const AllocationScreen = ({ user }) => {
               <Ionicons name="car-outline" size={60} color="#E5E7EB" />
               <Text style={styles.emptyTitle}>Aucun chauffeur trouvé</Text>
               <Text style={styles.emptyText}>
-                {filter === "Disponible" 
-                  ? "Aucun chauffeur disponible pour le moment" 
+                {filter === "Disponible"
+                  ? "Aucun chauffeur disponible pour le moment"
                   : "Aucun résultat correspondant à votre recherche"}
               </Text>
             </View>

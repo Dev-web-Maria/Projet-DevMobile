@@ -40,6 +40,7 @@ const ChauffeurDashboard = ({ user, navigation }) => {
   const [isAvailable, setIsAvailable] = useState(false);
   const [location, setLocation] = useState(null);
   const [address, setAddress] = useState("Localisation en cours...");
+  const [currentStatus, setCurrentStatus] = useState(user?.UserData?.statut || user?.statut || "En attente");
 
   // Normalisation des données utilisateur
   const chauffeurId = user?.chauffeurId || user?.ChauffeurId || user?.UserData?.idChauffeur;
@@ -57,9 +58,9 @@ const ChauffeurDashboard = ({ user, navigation }) => {
   };
 
   useEffect(() => {
-    if (user?.UserData?.statut) {
-      setIsAvailable(user.UserData.statut === "Disponible");
-    }
+    const status = user?.UserData?.statut || user?.statut || "En attente";
+    setCurrentStatus(status);
+    setIsAvailable(status === "Disponible");
     loadDashboardData();
 
     let locationWatcher;
@@ -167,6 +168,28 @@ const ChauffeurDashboard = ({ user, navigation }) => {
     }
   };
 
+  const fetchStats = async () => {
+    if (!chauffeurId) return;
+    try {
+      const url = `${Api_Base}/api/Chauffeur/GetStats/${chauffeurId}`;
+      const response = await axios.get(url, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (response.data.success) {
+        const s = response.data.stats;
+        setTodayStats({
+          deliveriesCompleted: s.todayMissions,
+          kilometers: s.todayDistance.toFixed(1) + " km",
+          earningsToday: s.todayEarnings + "€",
+          fuelConsumption: (s.todayDistance * 0.08).toFixed(1) + " L", // Estimation 8L/100km
+          co2Saved: (s.todayDistance * 0.12).toFixed(1) + " kg", // Estimation 120g/km
+        });
+      }
+    } catch (error) {
+      console.error("Erreur stats:", error);
+    }
+  };
+
   const loadDashboardData = async () => {
     if (!chauffeurId) {
       setLoading(false);
@@ -182,28 +205,17 @@ const ChauffeurDashboard = ({ user, navigation }) => {
 
       if (response.data.success) {
         setMissions(response.data.missions);
-        calculateStats(response.data.missions);
+        if (response.data.statut) {
+          setCurrentStatus(response.data.statut);
+          setIsAvailable(response.data.statut === "Disponible");
+        }
+        await fetchStats();
       }
     } catch (error) {
       console.error("Erreur chargement dashboard:", error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const calculateStats = (missionList) => {
-    const today = new Date().toISOString().split('T')[0];
-    const finishedMissions = missionList.filter(m => m.statut === "TERMINEE");
-    const todayMissions = finishedMissions.filter(m => m.dateDepart && m.dateDepart.startsWith(today));
-
-    // Simulation de stats si aucune mission réelle aujourd'hui (pour le démo)
-    setTodayStats({
-      deliveriesCompleted: todayMissions.length || (finishedMissions.length > 0 ? 0 : 3),
-      kilometers: (todayMissions.length * 120 || 340) + " km",
-      earningsToday: todayMissions.reduce((acc, m) => acc + (m.prixEstime || 0), 0) || 125 + "€",
-      fuelConsumption: "15 L",
-      co2Saved: "32 kg",
-    });
   };
 
   const onRefresh = async () => {
@@ -213,6 +225,11 @@ const ChauffeurDashboard = ({ user, navigation }) => {
   };
 
   const handleStatusChange = async () => {
+    if (currentStatus === "En attente") {
+      Alert.alert("Accès restreint", "Votre compte est en attente d'approbation. Vous ne pouvez pas passer en ligne pour le moment.");
+      return;
+    }
+
     const newStatus = !isAvailable ? "Disponible" : "Occupe";
     try {
       const url = `${Api_Base}/api/Chauffeur/UpdateStatus/${chauffeurId}`;
@@ -225,6 +242,7 @@ const ChauffeurDashboard = ({ user, navigation }) => {
 
       if (response.data.success) {
         setIsAvailable(!isAvailable);
+        setCurrentStatus(newStatus);
         Alert.alert("Statut mis à jour", `Vous êtes maintenant ${newStatus.toLowerCase()}.`);
       }
     } catch (error) {
@@ -330,6 +348,16 @@ const ChauffeurDashboard = ({ user, navigation }) => {
         </TouchableOpacity>
       </View>
 
+      {/* Bannière de compte en attente */}
+      {currentStatus === "En attente" && (
+        <View style={styles.pendingBanner}>
+          <Ionicons name="time" size={20} color="#856404" />
+          <Text style={styles.pendingText}>
+            Votre compte est en attente de validation par l'administrateur.
+          </Text>
+        </View>
+      )}
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#E31E24"]} />}
@@ -356,7 +384,7 @@ const ChauffeurDashboard = ({ user, navigation }) => {
 
             <View style={styles.statCard}>
               <View style={[styles.statIcon, { backgroundColor: '#00a65115' }]}>
-                <FontAwesome5 name="euro-sign" size={20} color="#00A651" />
+                <FontAwesome5 name="money-bill" size={20} color="#00A651" />
               </View>
               <Text style={styles.statNumber}>{todayStats.earningsToday}</Text>
               <Text style={styles.statDesc}>Gains</Text>
@@ -706,6 +734,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#666",
     marginTop: 2,
+  },
+  pendingBanner: {
+    backgroundColor: "#FFF3CD",
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#FFEEBA",
+  },
+  pendingText: {
+    flex: 1,
+    fontSize: 13,
+    color: "#856404",
+    fontWeight: "500",
   },
 });
 

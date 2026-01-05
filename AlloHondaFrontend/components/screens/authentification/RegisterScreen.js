@@ -48,6 +48,8 @@ export default function RegisterScreen({ navigation }) {
     };
 
     checkDevice();
+    // Test de connexion silencieux en arrière-plan au chargement
+    testServerConnection();
   }, []);
 
   const handleInputChange = (field, value) => {
@@ -295,7 +297,9 @@ d'accéder à localhost depuis votre iPhone.`,
 
         Alert.alert(
           '🎉 Félicitations !',
-          data.message || `Votre compte ${formData.userType === 'client' ? 'client' : 'chauffeur'} a été créé avec succès !`,
+          formData.userType === 'chauffeur'
+            ? "Votre compte chauffeur a été créé ! Il est actuellement en attente d'approbation par un administrateur."
+            : (data.message || "Votre compte client a été créé avec succès !"),
           [
             {
               text: 'Continuer',
@@ -365,7 +369,8 @@ Solution:
           <Text style={styles.title}>ALLOHONDA</Text>
           <Text style={styles.subtitle}>Créez votre compte</Text>
 
-          {/* Indicateur de connexion */}
+          {/* Indicateur de connexion caché */}
+          {/* 
           <TouchableOpacity
             style={styles.connectionStatus}
             onPress={showConnectionHelp}
@@ -391,6 +396,7 @@ Solution:
             </View>
             <Text style={styles.helpText}>Touchez pour info</Text>
           </TouchableOpacity>
+          */}
         </View>
 
         {/* Formulaire d'inscription */}
@@ -501,7 +507,7 @@ Solution:
               <Ionicons name="call-outline" size={20} color="#9CA3AF" />
               <TextInput
                 style={styles.input}
-                placeholder="+33 1 23 45 67 89"
+                placeholder="+212 6 00 00 00 00"
                 value={formData.telephone}
                 onChangeText={(text) => handleInputChange('telephone', text)}
                 keyboardType="phone-pad"
@@ -606,7 +612,8 @@ Solution:
             </Text>
           </View>
 
-          {/* Bouton TEST API */}
+          {/* Bouton TEST API caché */}
+          {/* 
           <TouchableOpacity
             style={styles.testButton}
             onPress={async () => {
@@ -627,6 +634,7 @@ Solution:
               <Text style={styles.testButtonText}>Tester la connexion API</Text>
             </View>
           </TouchableOpacity>
+          */}
 
           {/* Bouton d'inscription */}
           <TouchableOpacity
@@ -677,7 +685,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingVertical: 40,
+    justifyContent: 'center',
   },
   header: {
     alignItems: 'center',

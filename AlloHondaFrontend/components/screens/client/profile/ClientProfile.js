@@ -14,6 +14,7 @@ import {
   TextInput,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 import {
   Ionicons,
   MaterialIcons,
@@ -31,10 +32,48 @@ const ClientProfile = ({ user, navigation }) => {
 
   // Données du client
   const [clientData, setClientData] = useState(user);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [stats, setStats] = useState({
+    totalShipments: 0,
+    loyaltyPoints: 0,
+    totalSpent: 0
+  });
 
   useEffect(() => {
-    console.log("Client Data Loaded:", user);
-  }, []);
+    fetchStats();
+  }, [user]);
+
+  const fetchStats = async () => {
+    const clientId = user?.clientId || user?.ClientId || user?.userdata?.idClient || user?.userData?.idClient;
+    const token = user?.token || user?.Token;
+    const Api_Base = process.env.EXPO_PUBLIC_API_URL;
+
+    if (!clientId) return;
+
+    try {
+      setLoadingStats(true);
+      const url = `${Api_Base}/api/DemandeTransports/client/${clientId}`;
+      const response = await axios.get(url, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (response.data.success) {
+        const completedDemands = response.data.demandes.filter(d => d.statut === 'TERMINEE');
+        const totalShipments = completedDemands.length;
+        const totalSpent = completedDemands.reduce((sum, d) => sum + (d.prixEstime || 0), 0);
+
+        setStats({
+          totalShipments,
+          loyaltyPoints: totalShipments * 10,
+          totalSpent
+        });
+      }
+    } catch (error) {
+      console.error("Erreur fetch stats profile:", error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
   // Options du menu avec navigation
   const menuOptions = [
@@ -252,7 +291,7 @@ const ClientProfile = ({ user, navigation }) => {
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             <Image
-              source={{ uri: clientData.avatar }}
+              source={{ uri: "https://i.pravatar.cc/150" }}
               style={styles.avatar}
             />
             <TouchableOpacity style={styles.editAvatarButton}>
@@ -266,7 +305,7 @@ const ClientProfile = ({ user, navigation }) => {
           <View style={styles.membershipBadge}>
             <FontAwesome5 name="crown" size={14} color="#FFD700" />
             <Text style={styles.membershipText}>{clientData.membership}</Text>
-            <Text style={styles.memberSince}>Membre depuis {clientData.memberSince}</Text>
+            <Text style={styles.memberSince}>Membre depuis 2025</Text>
           </View>
         </View>
 
@@ -274,19 +313,25 @@ const ClientProfile = ({ user, navigation }) => {
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <MaterialCommunityIcons name="trophy" size={24} color="#FFD700" />
-            <Text style={styles.statNumber}>{clientData.points}</Text>
+            <Text style={styles.statNumber}>
+              {loadingStats ? "..." : stats.loyaltyPoints}
+            </Text>
             <Text style={styles.statLabel}>Points fidélité</Text>
           </View>
 
           <View style={styles.statCard}>
             <MaterialCommunityIcons name="package-variant" size={24} color="#E31E24" />
-            <Text style={styles.statNumber}>{clientData.totalShipments}</Text>
+            <Text style={styles.statNumber}>
+              {loadingStats ? "..." : stats.totalShipments}
+            </Text>
             <Text style={styles.statLabel}>Envois</Text>
           </View>
 
           <View style={styles.statCard}>
-            <FontAwesome5 name="euro-sign" size={20} color="#00A651" />
-            <Text style={styles.statNumber}>870</Text>
+            <FontAwesome5 name="wallet" size={20} color="#00A651" />
+            <Text style={styles.statNumber}>
+              {loadingStats ? "..." : `${stats.totalSpent}Dhs`}
+            </Text>
             <Text style={styles.statLabel}>Dépensé</Text>
           </View>
         </View>
@@ -370,7 +415,7 @@ const ClientProfile = ({ user, navigation }) => {
             onPress={handleContactSupport}
           >
             <Ionicons name="chatbubble-ellipses-outline" size={20} color="#E31E24" />
-            <Text style={styles.supportButtonText}>Contacter le support</Text>
+            <Text style={styles.supportButtonText}>Contacter Support</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -400,7 +445,7 @@ const ClientProfile = ({ user, navigation }) => {
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.versionText}>Version 2.1.4</Text>
-          <Text style={styles.copyrightText}>© 2024 AlloHonda Transport. Tous droits réservés.</Text>
+          <Text style={styles.copyrightText}>© 2025 AlloHonda Transport. Tous droits réservés.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

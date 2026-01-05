@@ -66,15 +66,15 @@ const ChauffeurHistoryScreen = ({ user, navigation }) => {
             status: "complétée",
             distance: m.distance || "0 km",
             duration: m.duration || "N/A",
-            earnings: `${m.prixEstime}€`,
+            earnings: `${m.prixEstime} Dhs`,
             rating: 5,
             customer: m.customer || "Client",
             vehicle: user?.UserData?.vehicule?.type || "Véhicule",
             items: m.items || 1,
             weight: m.weight || "0 kg",
-            fuelCost: `${Math.round(m.prixEstime * 0.12)}€`, // Simulated fuel cost
-            tollCost: `${Math.round(m.prixEstime * 0.08)}€`, // Simulated toll cost
-            netEarnings: `${m.prixEstime - Math.round(m.prixEstime * 0.20)}€`,
+            fuelCost: `${Math.round(m.prixEstime * 0.12)} Dhs`,
+            tollCost: `${Math.round(m.prixEstime * 0.08)} Dhs`,
+            netEarnings: `${m.prixEstime - Math.round(m.prixEstime * 0.20)} Dhs`,
             invoiceNumber: m.invoiceNumber || `FAC-${new Date().getFullYear()}-${m.idDemande}`
           }));
         setMissionsHistory(completed);
@@ -104,19 +104,19 @@ const ChauffeurHistoryScreen = ({ user, navigation }) => {
   const statsData = {
     week: {
       totalMissions: missionsHistory.length, // Ideally filtered by date
-      totalEarnings: `${totalGross}€`,
+      totalEarnings: `${totalGross} Dhs`,
       totalDistance: `${missionsHistory.reduce((sum, m) => sum + parseFloat(m.distance), 0)} km`,
       averageRating: 4.9,
     },
     month: {
       totalMissions: missionsHistory.length,
-      totalEarnings: `${totalGross}€`,
+      totalEarnings: `${totalGross} Dhs`,
       totalDistance: `${missionsHistory.reduce((sum, m) => sum + parseFloat(m.distance), 0)} km`,
       averageRating: 4.9,
     },
     year: {
       totalMissions: missionsHistory.length,
-      totalEarnings: `${totalGross}€`,
+      totalEarnings: `${totalGross} Dhs`,
       totalDistance: `${missionsHistory.reduce((sum, m) => sum + parseFloat(m.distance), 0)} km`,
       averageRating: 4.9,
     },
@@ -124,12 +124,12 @@ const ChauffeurHistoryScreen = ({ user, navigation }) => {
 
   // Performance mensuelle
   const monthlyPerformance = [
-    { month: "Jan", missions: 14, earnings: "1,850€" },
-    { month: "Fév", missions: 12, earnings: "1,650€" },
-    { month: "Mar", missions: 16, earnings: "2,100€" },
-    { month: "Avr", missions: 11, earnings: "1,450€" },
-    { month: "Mai", missions: 0, earnings: "0€" },
-    { month: "Juin", missions: 0, earnings: "0€" },
+    { month: "Jan", missions: 14, earnings: "1,850 Dhs" },
+    { month: "Fév", missions: 12, earnings: "1,650 Dhs" },
+    { month: "Mar", missions: 16, earnings: "2,100 Dhs" },
+    { month: "Avr", missions: 11, earnings: "1,450 Dhs" },
+    { month: "Mai", missions: 0, earnings: "0 Dhs" },
+    { month: "Juin", missions: 0, earnings: "0 Dhs" },
   ];
 
   // Filtrer les missions
@@ -512,15 +512,15 @@ const ChauffeurHistoryScreen = ({ user, navigation }) => {
             <Text style={styles.financialTitle}>Résumé financier Global</Text>
             <View style={styles.financialRow}>
               <Text style={styles.financialLabel}>Gains bruts totaux</Text>
-              <Text style={styles.financialValue}>{totalGross}€</Text>
+              <Text style={styles.financialValue}>{totalGross} Dhs</Text>
             </View>
             <View style={styles.financialRow}>
               <Text style={styles.financialLabel}>Frais estimés (carburant & péages)</Text>
-              <Text style={[styles.financialValue, styles.expenseValue]}>- {totalFees}€</Text>
+              <Text style={[styles.financialValue, styles.expenseValue]}>- {totalFees} Dhs</Text>
             </View>
             <View style={[styles.financialRow, styles.netRow]}>
               <Text style={[styles.financialLabel, styles.netLabel]}>Gains nets totaux</Text>
-              <Text style={[styles.financialValue, styles.netValue]}>{totalNet}€</Text>
+              <Text style={[styles.financialValue, styles.netValue]}>{totalNet} Dhs</Text>
             </View>
           </View>
         </View>

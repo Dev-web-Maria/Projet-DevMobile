@@ -35,11 +35,19 @@ const ChauffeurDemandeVisualisation = ({ user, navigation }) => {
   const token = user?.token || user?.Token;
   const Api_Base = process.env.EXPO_PUBLIC_API_URL;
 
+  const currentStatus = user?.UserData?.statut || user?.userData?.statut || user?.statut || "En attente";
+
   React.useEffect(() => {
-    fetchRequests();
-  }, []);
+    if (currentStatus !== "En attente") {
+      fetchRequests();
+    } else {
+      setLoading(false);
+    }
+  }, [currentStatus]);
 
   const fetchRequests = async () => {
+    if (currentStatus === "En attente") return;
+
     try {
       setLoading(true);
       const url = `${Api_Base}/api/DemandeTransports`;
@@ -213,7 +221,7 @@ const ChauffeurDemandeVisualisation = ({ user, navigation }) => {
         <View style={styles.requestFooter}>
           <View>
             <Text style={styles.priceLabel}>Prix proposé</Text>
-            <Text style={styles.priceText}>{request.prixEstime}€</Text>
+            <Text style={styles.priceText}>{request.prixEstime} Dhs</Text>
           </View>
 
           {isAvailable && (
@@ -238,6 +246,26 @@ const ChauffeurDemandeVisualisation = ({ user, navigation }) => {
       </TouchableOpacity>
     );
   };
+
+  if (currentStatus === "En attente") {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        <View style={styles.header}>
+          <Text style={styles.title}>Missions</Text>
+          <Text style={styles.subtitle}>Consultez et acceptez des trajets</Text>
+        </View>
+        <View style={styles.emptyState}>
+          <MaterialCommunityIcons name="lock" size={80} color="#e0e0e0" />
+          <Text style={styles.emptyStateTitle}>Accès restreint</Text>
+          <Text style={styles.emptyStateText}>
+            Votre compte est en attente d'approbation par l'administrateur.
+            Impossible de voir les demandes avant approbation.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -378,7 +406,7 @@ const ChauffeurDemandeVisualisation = ({ user, navigation }) => {
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>{stats.accepted}</Text>
-            <Text style={styles.statLabel}>Les miennes</Text>
+            <Text style={styles.statLabel}>Miennes</Text>
           </View>
           <View style={styles.statItem}>
             <View style={styles.statDivider} />

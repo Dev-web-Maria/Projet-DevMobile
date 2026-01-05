@@ -114,7 +114,8 @@ const ClientDashboard = ({ user, navigation }) => {
       demandesTerminees: demandesTerminees,
       totalDepense: totalDepense,
       satisfactionRate: satisfactionRate,
-      onTimeDelivery: Math.max(85, satisfactionRate - 5) // Simulation
+      onTimeDelivery: Math.max(85, satisfactionRate - 5), // Simulation
+      loyaltyPoints: demandesTerminees * 10
     });
   };
 
@@ -132,8 +133,7 @@ const ClientDashboard = ({ user, navigation }) => {
     telephone: user?.telephone,
     adresse: user?.adresse,
     ville: user?.ville,
-    photoProfil: user?.photoProfil || "https://i.pravatar.cc/150",
-    points: user?.userdata?.loyaltyPoints || 0,
+    photoProfil: "https://i.pravatar.cc/150",
   };
 
   // Données pour graphiques - basées sur les données réelles
@@ -170,7 +170,7 @@ const ClientDashboard = ({ user, navigation }) => {
       types[type] = (types[type] || 0) + 1;
     });
 
-    const colors = ["#E31E24", "#0056A6", "#00A651", "#FFB300", "#9C27B0", "#FF9800"];
+    const colors = ["#E31E24", "#0066FF", "#00A651", "#FFB300", "#9C27B0", "#FF9800"];
     return Object.entries(types).map(([name, count], index) => ({
       name,
       population: count,
@@ -226,7 +226,7 @@ const ClientDashboard = ({ user, navigation }) => {
       to: demande.arrivee || "Non spécifié",
       status: demande.statut.toLowerCase(),
       rating: 5, // À implémenter avec un système de notation
-      cost: `${demande.prixEstime?.toFixed(2) || '0'}€`,
+      cost: `${demande.prixEstime?.toFixed(2) || '0'}Dhs`,
     }));
 
   // Promotions
@@ -240,7 +240,7 @@ const ClientDashboard = ({ user, navigation }) => {
     {
       id: 2,
       title: "Livraison gratuite",
-      description: "Pour tout envoi > 100€",
+      description: "Pour tout envoi > 100Dhs",
       code: "FREESHIP100",
       validUntil: "15/05/2024",
     },
@@ -294,11 +294,11 @@ const ClientDashboard = ({ user, navigation }) => {
             <View style={styles.profileInfo}>
               <Text style={styles.greeting}>Bonjour,</Text>
               <Text style={styles.clientName}>{clientData.name}</Text>
-              {clientData.points > 0 && (
+              {stats.loyaltyPoints > 0 && (
                 <View style={styles.loyaltyBadge}>
                   <Ionicons name="star" size={14} color="#FFD700" />
                   <Text style={styles.loyaltyText}>
-                    {clientData.points} points fidélité
+                    {stats.loyaltyPoints} points fidélité
                   </Text>
                 </View>
               )}
@@ -357,7 +357,7 @@ const ClientDashboard = ({ user, navigation }) => {
               <View style={styles.statIconContainer}>
                 <FontAwesome5 name="euro-sign" size={20} color="#00A651" />
               </View>
-              <Text style={styles.statNumber}>{stats.totalDepense.toFixed(2)}€</Text>
+              <Text style={styles.statNumber}>{stats.totalDepense.toFixed(2)}Dhs</Text>
               <Text style={styles.statLabel}>Total dépensé</Text>
             </View>
 
@@ -371,85 +371,6 @@ const ClientDashboard = ({ user, navigation }) => {
           </View>
         </View>
 
-        {/* Graphiques */}
-        {demandes.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Analyses et performances</Text>
-
-            {/* Graphique en ligne - Tendances mensuelles */}
-            {demandes.length >= 3 && (
-              <View style={styles.chartCard}>
-                <Text style={styles.chartTitle}>Demandes mensuelles</Text>
-                <LineChart
-                  data={getMonthlyShipmentData()}
-                  width={width - 60}
-                  height={180}
-                  chartConfig={{
-                    backgroundColor: "#fff",
-                    backgroundGradientFrom: "#fff",
-                    backgroundGradientTo: "#fff",
-                    decimalPlaces: 0,
-                    color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`,
-                    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                    style: {
-                      borderRadius: 16,
-                    },
-                    propsForDots: {
-                      r: "6",
-                      strokeWidth: "2",
-                      stroke: "#2196F3",
-                    },
-                  }}
-                  bezier
-                  style={styles.chart}
-                />
-              </View>
-            )}
-
-            {/* Graphique circulaire - Types de marchandises */}
-            {demandes.length > 0 && (
-              <View style={styles.chartCard}>
-                <Text style={styles.chartTitle}>Types de marchandises</Text>
-                <View style={styles.pieChartContainer}>
-                  <PieChart
-                    data={getShipmentTypeData()}
-                    width={width - 60}
-                    height={180}
-                    chartConfig={{
-                      color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                    }}
-                    accessor="population"
-                    backgroundColor="transparent"
-                    paddingLeft="15"
-                    absolute
-                  />
-                </View>
-              </View>
-            )}
-
-            {/* Graphique de performance */}
-            <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>Indicateurs de performance</Text>
-              <ProgressChart
-                data={performanceData}
-                width={width - 60}
-                height={180}
-                strokeWidth={16}
-                radius={32}
-                chartConfig={{
-                  backgroundColor: "#fff",
-                  backgroundGradientFrom: "#fff",
-                  backgroundGradientTo: "#fff",
-                  decimalPlaces: 2,
-                  color: (opacity = 1) => `rgba(231, 30, 36, ${opacity})`,
-                  labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                }}
-                hideLegend={false}
-                style={styles.chart}
-              />
-            </View>
-          </View>
-        )}
 
         {/* Demande en cours */}
         <View style={styles.section}>
@@ -470,11 +391,11 @@ const ClientDashboard = ({ user, navigation }) => {
                 onPress={() => handleDemandePress(shipment.demandeData)}
               >
                 <View style={styles.shipmentHeader}>
-                  <View>
-                    <Text style={styles.trackingNumber}>
+                  <View style={{ flex: 1, marginRight: 10 }}>
+                    <Text style={styles.trackingNumber} numberOfLines={1}>
                       {shipment.trackingNumber}
                     </Text>
-                    <Text style={styles.route}>
+                    <Text style={styles.route} numberOfLines={2}>
                       <MaterialCommunityIcons
                         name="map-marker"
                         size={14}
@@ -685,11 +606,11 @@ const ClientDashboard = ({ user, navigation }) => {
                 onPress={() => navigation.navigate('DemandeDetails', { demandeId: item.id })}
               >
                 <View style={styles.historyHeader}>
-                  <View>
-                    <Text style={styles.historyTracking}>
+                  <View style={{ flex: 1, marginRight: 10 }}>
+                    <Text style={styles.historyTracking} numberOfLines={1}>
                       {item.trackingNumber}
                     </Text>
-                    <Text style={styles.historyRoute}>
+                    <Text style={styles.historyRoute} numberOfLines={2}>
                       {item.from} → {item.to}
                     </Text>
                   </View>
@@ -811,7 +732,7 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 20 : 60,
     flex: 1,
     justifyContent: "space-between",
   },
@@ -899,7 +820,6 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    marginTop: -30,
   },
   statsContainer: {
     paddingHorizontal: 20,

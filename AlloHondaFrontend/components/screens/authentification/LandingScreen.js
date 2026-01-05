@@ -110,10 +110,10 @@ export default function LandingScreen({ navigation }) {
       {/* FOOTER */}
       <Animatable.View animation="fadeIn" delay={1600} style={styles.footer}>
         <MaterialCommunityIcons name="truck-fast" size={32} color="#1A56DB" />
-        <Text style={styles.footerText}>© 2024 ALLOHONDA Logistics</Text>
+        <Text style={styles.footerText}>© 2025 ALLOHONDA Logistics</Text>
         <Text style={styles.version}>Version 2.4.0</Text>
 
-        {/* 🔐 SUPPORT / ADMIN */}
+        {/* SUPPORT / ADMIN */}
         <TouchableOpacity
           style={styles.adminLinkContainer}
           onPress={() => navigation.navigate('AdminLogin')}
@@ -128,7 +128,12 @@ export default function LandingScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  contentContainer: { padding: 20, paddingBottom: 40 },
+  contentContainer: {
+    flexGrow: 1,
+    padding: 20,
+    justifyContent: 'center',
+    paddingBottom: 40
+  },
 
   header: { alignItems: 'center', marginTop: 40 },
   logoContainer: { marginBottom: 20 },

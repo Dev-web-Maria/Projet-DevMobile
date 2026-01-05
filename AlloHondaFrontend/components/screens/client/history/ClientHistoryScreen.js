@@ -57,7 +57,7 @@ const ClientHistoryScreen = ({ user }) => {
             status: 'livré',
             weight: `${d.poids} kg`,
             items: d.volume > 0 ? Math.max(1, Math.floor(d.volume * 2)) : 1,
-            cost: `${d.prixEstime}€`,
+            cost: `${d.prixEstime}Dhs`,
             driver: d.chauffeur ? `${d.chauffeur.prenom} ${d.chauffeur.nom}` : "Non assigné",
             vehicle: d.chauffeur?.vehicule?.type || "Non spécifié",
             rating: 5, // Simulated for now
@@ -148,8 +148,8 @@ const ClientHistoryScreen = ({ user }) => {
       </View>
 
       <View style={styles.footer}>
-        <View>
-          <Text style={styles.typeText}>{shipment.type}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.typeText} numberOfLines={1}>{shipment.type}</Text>
           {renderStars(shipment.rating)}
         </View>
         <Text style={styles.costText}>{shipment.cost}</Text>
@@ -202,10 +202,10 @@ const ClientHistoryScreen = ({ user }) => {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <View>
-              <Text style={styles.title}>Historique des transports</Text>
+            <View style={{ flex: 1, marginRight: 10 }}>
+              <Text style={styles.title} numberOfLines={1}>Historique des transports</Text>
               <Text style={styles.subtitle}>
-                {stats.total} envois • {stats.totalCost}€ dépensés
+                {stats.total} envois • {stats.totalCost}Dhs dépensés
               </Text>
             </View>
             <View style={styles.statsBadge}>
@@ -250,8 +250,8 @@ const ClientHistoryScreen = ({ user }) => {
             <Text style={styles.summaryLabel}>Envois total</Text>
           </View>
           <View style={styles.summaryCard}>
-            <FontAwesome5 name="euro-sign" size={20} color="#00A651" />
-            <Text style={styles.summaryNumber}>{stats.totalCost}€</Text>
+            <FontAwesome5 name="wallet" size={20} color="#00A651" />
+            <Text style={styles.summaryNumber}>{stats.totalCost}Dhs</Text>
             <Text style={styles.summaryLabel}>Total dépensé</Text>
           </View>
           <View style={styles.summaryCard}>

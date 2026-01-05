@@ -74,7 +74,7 @@ const ChauffeurProfile = ({ user, navigation }) => {
     experience: "5 ans",
     rating: 4.8,
     totalMissions: 245,
-    totalEarnings: "18,750€",
+    totalEarnings: "18,750 Dhs",
     hoursWorked: "1,560h",
     memberSince: "Depuis 2024",
     avatar: "https://randomuser.me/api/portraits/men/32.jpg",
@@ -85,7 +85,33 @@ const ChauffeurProfile = ({ user, navigation }) => {
     console.log("User permis:", user?.userData?.numeroPermis);
     console.log("User statut:", user?.userData?.statut);
     fetchVehicleData();
-  }, [driverData, user]);
+    fetchStats();
+  }, [user]);
+
+  const fetchStats = async () => {
+    const chauffeurId = user?.userData?.idChauffeur;
+    if (!chauffeurId) return;
+
+    try {
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL;
+      const response = await axios.get(`${baseUrl}/api/Chauffeur/GetStats/${chauffeurId}`, {
+        headers: { "Authorization": `Bearer ${user?.token}` }
+      });
+
+      if (response.data.success) {
+        const s = response.data.stats;
+        setDriverData(prev => ({
+          ...prev,
+          totalMissions: s.totalMissions,
+          totalEarnings: s.totalEarnings.toLocaleString() + " Dhs",
+          hoursWorked: s.totalHours.toFixed(1) + "h",
+          rating: s.rating
+        }));
+      }
+    } catch (error) {
+      console.error("Erreur stats profil:", error);
+    }
+  };
 
   const fetchVehicleData = async () => {
     const chauffeurId = user?.userData?.idChauffeur;
@@ -708,7 +734,7 @@ const ChauffeurProfile = ({ user, navigation }) => {
           </View>
 
           <View style={styles.statCard}>
-            <FontAwesome5 name="euro-sign" size={20} color="#00A651" />
+            <FontAwesome5 name="money-bill" size={20} color="#00A651" />
             <Text style={styles.statNumber}>{driverData.totalEarnings}</Text>
             <Text style={styles.statLabel}>Gains</Text>
           </View>
@@ -1009,7 +1035,7 @@ const ChauffeurProfile = ({ user, navigation }) => {
             ID Chauffeur: {driverData.driverId}
           </Text>
           <Text style={styles.copyrightText}>
-            © 2024 AlloHonda Transport. Tous droits réservés.
+            © 2025 AlloHonda Transport. Tous droits réservés.
           </Text>
         </View>
       </ScrollView>

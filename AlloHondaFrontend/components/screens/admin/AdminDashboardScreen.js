@@ -111,7 +111,7 @@ const AdminDashboardScreen = ({ navigation, route }) => {
          } else {
             console.log('⚠️ Stats API error:', response.status);
             const errorText = await response.text();
-            setErrorLog(`Erreur API: ${response.status} - ${API_BASE}`); // Log IP
+            setErrorLog(`Erreur API: ${response.status} - ${API_BASE}/api/AdminStats/Overview`); // Log Full URL
             console.log('Error details:', errorText);
          }
       } catch (error) {
@@ -205,7 +205,7 @@ const AdminDashboardScreen = ({ navigation, route }) => {
                />
                <StatCard
                   title="Revenus Total"
-                  value={`${stats.totalRevenue.toLocaleString()} €`}
+                  value={`${stats.totalRevenue.toLocaleString()} Dhs`}
                   icon="cash-multiple"
                   color="#8B5CF6"
                   subtitle="Cumul missions"
